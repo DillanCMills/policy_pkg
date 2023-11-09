@@ -1,5 +1,5 @@
 \documentclass[conference,onecolumn]{IEEEtran}
-\IEEEoverridecommandlockouts
+% \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -9,37 +9,61 @@
 \usepackage{xcolor}
 \usepackage{minted}
 \usepackage[framemethod=TikZ]{mdframed}
-% \usemintedstyle{monokai}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
 T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-\surroundwithmdframed[
+\mdfsetup{
     middlelinewidth    = 2,
     roundcorner       = 10pt,
     leftmargin        = 40,
     rightmargin       = 40,
-    backgroundcolor   = gray!5,
+    backgroundcolor   = black!95,
     middlelinecolor    = gray!50,
     innertopmargin    = \topskip,
     innerbottommargin = \topskip,
     splittopskip      = \topskip,
-]{minted}
+}
+
+\usemintedstyle{one-dark}
+
+\newcommand{\svfile}[1]{
+\begin{mdframed}
+\inputminted[
+    linenos,
+    numbersep=16pt,
+    breaklines,
+]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{#1}
+\end{mdframed}
+}
+\newcommand{\code}[1]{
+\textbf{\mintinline{text}{#1}}
+}
+
+\newminted[svcode]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{
+    linenos,
+    numbersep=16pt,
+    breaklines,
+}
+\surroundwithmdframed{svcode}
 
 \begin{document}
 
 \title{Four Problems with Policy-Based Constraints and How to Fix Them}
 
-% \author{\IEEEauthorblockN{Dillan Mills}
-%     \IEEEauthorblockA{\textit{Synopsys, Inc.} \\
-%         Maricopa, AZ \\
-%         dillan@synopsys.com}
-%     \and
-%     \IEEEauthorblockN{Chip Haldane}
-%     \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-%         Gilbert, AZ \\
-%         email address or ORCID}
-% }
+\author{
+    \IEEEauthorblockN{Dillan Mills}
+    \IEEEauthorblockA{\textit{Synopsys, Inc.} \\
+        Maricopa, AZ \\
+        dillan@synopsys.com}
+    \and
+    \IEEEauthorblockN{Chip Haldane}
+    \IEEEauthorblockA{\textit{The Chip Abides, LLC} \\
+        Gilbert, AZ \\
+        chip@thechipabides.com}
+}
 
 \maketitle
 
@@ -47,52 +71,186 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
     This paper presents solutions to problems encountered in the implementation of policy classes for SystemVerilog constraint layering. Policy classes provide portable and reusable constraints that can be mixed and matched into the object being randomized. There have been many papers and presentations on policy classes since the original presentation by John Dickol at DVCon 2015. The paper addresses three problems shared by all public policy class implementations and presents a solution to a fourth problem. The proposed solutions introduce policy class inheritance, tightly pair policy definitions with the class they constrain, reduce the expense of defining common policies using macros, and demonstrate how to treat policies as disposable and lightweight objects. The paper concludes that the proposed solution improves the usability and efficiency of policy classes for SystemVerilog constraint layering.
 \end{abstract}
 
-\section{Extended Abstract}
-Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. Kevin Vasconcellos and Jeff McNeal applied the concept to test configuration and added many nice utilities to the base policy class \cite{b3}. Chuck McClish extended the concept to manage real number values for User Defined Nettypes (UDN) and Unified Power Format (UPF) pins in an analog model \cite{b4}. Additionally, he defined a policy builder class that was used to generically build multiple types of policies while reducing repeated code that was shared between each policy class in the original implementation.
+\section{Constraints and Policy Class Review}
 
-There are three problems shared by all of these implementations, and a fourth problem we observed in our original implementation of policies that this paper will address and present solutions for. The first problem is that because policies are specialized using parameterization to the class they constrain, different specializations of parameterized classes cannot be grouped and indexed. This is most apparent when creating a class hierarchy. If you extend the target class, then you need a new policy type. The new policy type requires an extra policy list to modify any new attributes in the child class and requires the user to know which layer of the class hierarchy defines each attribute they want to constrain. Imagine a complex class hierarchy with many layers of inheritance and extension, and new constrainable attributes on each layer (one common example is a multi-layered sequence API library, such as the example presented by Jeff Vance \cite{b5}). Using policies becomes cumbersome in this case because you need to manage a separate policy list for each level of the hierarchy and know what each list can and cannot contain. The solution to this problem is to introduce class inheritance into the policy classes that mirror the target class hierarchy, supplemented by convenient macros to keep the solution simple.
+When working with randomized objects in SystemVerilog, it is typically desired to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constaint check. For example, the following \code{addr_txn} class contains a constraint on the \code{addr} property to ensure it is always word aligned.
 
-The second problem is ``where do I define my policy classes?'' This is not a complicated problem to solve, and most users likely place their policy classes in a file close to the class they are constraining. However, this paper will present a solution that explicitly pairs policy definitions with the class they constrain, so users never need to hunt for the definitions or guess where they are located, and so the definitions have an appropriate and consistent home in the environment. This is done by embedding a \mintinline{text}|POLICIES| class inside the class being constrained. This class acts as a container for all relevant policies and allows policies to be created by simply referencing the embedded class through the \mintinline{text}|::| operator.
+\begin{svcode}
+class addr_txn;
+    rand bit [31:0] addr;
+    rand int        size;
+    
+    constraint c_size {size inside {1, 2, 4};}
+endclass
+\end{svcode}
 
-The third problem is that policies are relatively expensive to define since you need at a minimum, a class definition, a constructor, and a constraint. This will be relatively unavoidable for complex policies, such as those defining a relationship between multiple specific class attributes. For generic policies, such as equality constraints, range constraints, or set membership (keyword \mintinline{text}|inside|) constraints, a strategy using macros is presented that drastically reduces the expense and risk of defining common policies. The macros are responsible for creating the specialized policy class for the required constraint within the target class, as well as a static constructor function that is used to create new policy instances of the class. Additional macros are utilized for setting up the embedded \mintinline{text}|POLICIES| class within the target class. These macros can be used hand in hand with the non-macro policy classes needed for the complex constraints, if necessary.
+Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. For example, the same \code{addr_txn} class can have an instance of it randomized with the following constraint on its \code{data} property.
 
-A fourth problem we noticed in our usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It appeared as though the policies ``remembered'' being randomized and wouldn't reapply their constraints during subsequent \mintinline{text}|randomize| calls. An exact diagnosis of the issue was not discovered because we transitioned our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. We implemented practices such as static functions to create new instances of the policies and policy methods to return fresh copies of themselves.
+\begin{svcode}
+addr_txn txn = new();
+txn.randomize() with {addr == 32'hdeadbeef;};
+\end{svcode}
+
+Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of his approach can be found by examining the following code.
+
+\begin{svcode}
+class policy_base#(type ITEM=uvm_object);
+    ITEM item;
+
+    virtual function void set_item(ITEM item);
+        this.item = item;
+    endfunction
+endclass
+
+
+class policy_list#(type ITEM=uvm_object) extends policy_base#(ITEM);
+    rand policy_base#(ITEM) policy[$];
+
+    function void add(policy_base#(ITEM) pcy);
+        policy.push_back(pcy);
+    endfunction
+
+    function void set_item(ITEM item);
+        foreach(policy[i]) policy[i].set_item(item);
+    endfunction
+endclass
+\end{svcode}
+
+These first two classes provide the base class types for the actual policies. This allows different, related policies to be grouped together in \code{policy_list} and applied to the randomization call concurrently. Both of these classes are parameterized to a specific object type, so separate instances will be required for each class type that needs to be constrained.
+
+\begin{svcode}
+class addr_policy_base extends policy_base#(addr_txn);
+    addr_range ranges[$];
+
+    function add(addr_t min, addr_t max);
+        addr_range rng = new(min, max);
+        ranges.push_back(rng);
+    endfunction
+endclass
+
+
+class addr_permit_policy extends addr_policy_base;
+    rand int selection;
+
+    constraint c_addr_permit {
+        selection inside {[0:ranges.size()-1];}
+
+        foreach(ranges[i]) {
+            if(selection == i) {
+                item.addr inside {[ranges[i].min:ranges[i].max - item.size]};
+            }
+        }
+    }
+endclass
+
+
+class addr_prohibit_policy extends addr_policy_base;
+    constraint c_addr_prohibit {
+        foreach(ranges[i]) {
+            !(item.addr inside {[ranges[i].min:ranges[i].max - item.size + 1]});
+        }
+    }
+endclass
+\end{svcode}
+
+The next three classes contain implementations of the \code{policy_base} class for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
+
+\begin{svcode}
+class addr_txn;
+    rand bit [31:0] addr;
+    rand int        size;
+    rand policy_base#(addr_txn) policy[$];
+    
+    constraint c_size {size inside {1, 2, 4};}
+
+    function void pre_randomize;
+        foreach(policy[i]) policy[i].set_item(this);
+    endfunction
+endclass
+
+
+class addr_constrained_txn extends addr_txn;
+    function new;
+        addr_permit_policy    permit = new;
+        addr_prohibit_policy  prohibit = new;
+        policy_list#(addr_txn) pcy = new;
+
+        permit.add('h00000000, 'h0000FFFF);
+        permit.add('h10000000, 'h1FFFFFFF);
+        pcy.add(permit);
+
+        prohibit.add('h13000000, 'h130FFFFF);
+        pcy.add(prohibit);
+
+        this.policy = {pcy};
+    endfunction
+endclass
+\end{svcode}
+
+The final two classes show how these policies are used. The \code{addr_txn} class creates a \code{policy} queue, and during the \code{pre_randomize} function sets the handle to the \code{item} object within each policy to itself. The \code{addr_constrained_txn} subclass adds two policies to a local \code{pcy} list, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
+
+At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the policies provided. 
+
+Further work on policy-based constraints has been presented since the original DVCon presentation in 2015. Kevin Vasconcellos and Jeff McNeal applied the concept to test configuration and added many nice utilities to the base policy class \cite{b3}. Chuck McClish extended the concept to manage real number values for User Defined Nettypes (UDN) and Unified Power Format (UPF) pins in an analog model \cite{b4}. Additionally, he defined a policy builder class that was used to generically build multiple types of policies while reducing repeated code that was shared between each policy class in the original implementation.
+
+Although there has been extensive research on policies, this paper aims to address and provide solutions for three issues that have not been adequately resolved in previous implementations. Furthermore, a fourth problem that arose during testing of the upgraded policy package implementation will also be discussed and resolved.
+
+\section{Problem \#1: Parameterized Policies}
+
+The first problem is that because policies are specialized using parameterization to the class they constrain, different specializations of parameterized classes cannot be grouped and indexed. This is most apparent when creating a class hierarchy. If you extend the target class, then you need a new policy type. The new policy type requires an extra policy list to modify any new attributes in the child class and requires the user to know which layer of the class hierarchy defines each attribute they want to constrain. Imagine a complex class hierarchy with many layers of inheritance and extension, and new constrainable attributes on each layer (one common example is a multi-layered sequence API library, such as the example presented by Jeff Vance \cite{b5}). Using policies becomes cumbersome in this case because you need to manage a separate policy list for each level of the hierarchy and know what each list can and cannot contain. The solution to this problem is to introduce class inheritance into the policy classes that mirror the target class hierarchy, supplemented by convenient macros to keep the solution simple.
+
+\section{Problem \#2: Definition Location}
+
+The second problem is ``where do I define my policy classes?'' This is not a complicated problem to solve, and most users likely place their policy classes in a file close to the class they are constraining. However, this paper will present a solution that explicitly pairs policy definitions with the class they constrain, so users never need to hunt for the definitions or guess where they are located, and so the definitions have an appropriate and consistent home in the environment. This is done by embedding a \code{POLICIES} class inside the class being constrained. This class acts as a container for all relevant policies and allows policies to be created by simply referencing the embedded class through the \code{::|}operator.
+
+\section{Problem \#3: Boilerplate Overload}
+
+The third problem is that policies are relatively expensive to define since you need at a minimum, a class definition, a constructor, and a constraint. This will be relatively unavoidable for complex policies, such as those defining a relationship between multiple specific class attributes. For generic policies, such as equality constraints, range constraints, or set membership (keyword \code{inside}) constraints, a strategy using macros is presented that drastically reduces the expense and risk of defining common policies. The macros are responsible for creating the specialized policy class for the required constraint within the target class, as well as a static constructor function that is used to create new policy instances of the class. Additional macros are utilized for setting up the embedded \code{POLICIES} class within the target class. These macros can be used hand in hand with the non-macro policy classes needed for the complex constraints, if necessary.
+
+\section{Problem \#4: Unexpected Policy Reuse Behavior}
+
+A fourth problem we noticed in our usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It appeared as though the policies ``remembered'' being randomized and wouldn't reapply their constraints during subsequent \code{randomize} calls. An exact diagnosis of the issue was not discovered because we transitioned our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. We implemented practices such as static functions to create new instances of the policies and policy methods to return fresh copies of themselves.
+
+\section{Conclusion}
 
 Functional example code will be provided to demonstrate the solutions to these problems and provide other minor improvements to the original policy class implementation.
 
-% \begin{minted}[
-%     linenos,
-%     numbersep=16pt,    
-% ]{systemverilog}
-% // Full Policy Definition
-% `define constant_policy(POLICY, TYPE, field, constant)              \
-% `CONST_POLICY_CLASS(POLICY, TYPE, field, constant)                  \
-% `CONST_POLICY_CONSTRUCTOR(POLICY)
+\appendices
 
-% // Policy Class Definition
-% `define CONST_POLICY_CLASS(POLICY, TYPE, field, constant)           \
-%     class POLICY``_policy extends LOCAL_PCY_T;                      \
-%         typedef TYPE                     l_field_t;                 \
-%                                                                     \
-%         constraint c_const_value {                                  \
-%             (item != null) -> (item.field == l_field_t'(constant)); \
-%         }                                                           \
-%                                                                     \
-%         function new();                                             \
-%         endfunction : new                                           \
-%                                                                     \
-%         virtual function string name();                             \
-%             return( `"POLICY(field==constant)`" );                  \
-%         endfunction : name                                          \
-%     endclass : POLICY``_policy
+\section{Policy Package}
 
-% // Policy Constructor Definition
-% `define CONST_POLICY_CONSTRUCTOR(POLICY)                            \
-%     static function policy POLICY();                                \
-%         POLICY``_policy new_pcy = new();                            \
-%         return( new_pcy );                                          \
-%     endfunction : POLICY
-% \end{minted}
+\subsection{policy\_pkg.sv}
+\svfile{../policy_pkg/policy_pkg.sv}
+
+\subsection{policy.svh}
+\svfile{../policy_pkg/policy.svh}
+
+\subsection{policy\_container.svh}
+\svfile{../policy_pkg/policy_container.svh}
+
+\subsection{policy\_imp.svh}
+\svfile{../policy_pkg/policy_imp.svh}
+
+\subsection{policy\_list.svh}
+\svfile{../policy_pkg/policy_list.svh}
+
+\section{Policy Macros}
+
+\subsection{policy\_macros.svh}
+\svfile{../policy_pkg/macros/policy_macros.svh}
+
+\subsection{constant\_policy.svh}
+\svfile{../policy_pkg/macros/constant_policy.svh}
+
+\subsection{fixed\_policy.svh}
+\svfile{../policy_pkg/macros/fixed_policy.svh}
+
+\subsection{ranged\_policy.svh}
+\svfile{../policy_pkg/macros/ranged_policy.svh}
+
+\subsection{set\_policy.svh}
+\svfile{../policy_pkg/macros/set_policy.svh}
+
 
 % \section{Introduction}
 % This document is a model and instructions for \LaTeX.
