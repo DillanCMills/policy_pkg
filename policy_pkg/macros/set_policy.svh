@@ -11,9 +11,9 @@
     class POLICY``_policy extends LOCAL_POLICY_T                              \
         typedef TYPE        l_field_array_t[];                                \
                                                                               \
-        protected l_field_array_t m_values;                                   \
-        protected bit       m_inside;                                         \
-        protected string    m_radix=RADIX;                                    \
+        protected l_field_array_t   m_values;                                 \
+        protected bit               m_inside;                                 \
+        protected string            m_radix=RADIX;                            \
                                                                               \
         constrant c_set_value {                                               \
             (item != null) ->                                                 \
@@ -22,8 +22,8 @@
                                                                               \
         function new(                                                         \
             l_field_array_t values,                                           \
-            bit    inside=1'b1,                                               \
-            string radix=RADIX                                                \
+            bit             inside=1'b1,                                      \
+            string          radix=RADIX                                       \
         );                                                                    \
             this.set_values(values);                                          \
             this.set_inside(inside);                                          \
@@ -80,8 +80,8 @@
     typedef TYPE POLICY``_array_t[];                                          \
     static function policy POLICY(                                            \
         POLICY``_array_t values,                                              \
-        bit    inside=1'b1,                                                   \
-        string radix=RADIX                                                    \
+        bit              inside=1'b1,                                         \
+        string           radix=RADIX                                          \
     );                                                                        \
         POLICY``_policy new_pcy = new(values, inside, radix);                 \
         return (new_pcy);                                                     \
