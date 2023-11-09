@@ -20,46 +20,7 @@
                 ((m_inside) ^ (item.field inside {m_values}));                \
         }                                                                     \
                                                                               \
-        function new(  _POLICY_IMP(cls)                   \
-    typedef policy_imp#(cls) LOCAL_POLICY_T;
-
-
-//================================================
-// Policy template macros
-//================================================
-
-`include "macros/constant_policy.svh"
-`include "macros/fixed_policy.svh"
-`include "macros/ranged_policy.svh"
-`include "macros/set_policy.svh"
-
-`endif_POLICY_IMP(cls)                   \
-    typedef policy_imp#(cls) LOCAL_POLICY_T;
-
-
-//================================================
-// Policy template macros
-//================================================
-
-`include "macros/constant_policy.svh"
-`include "macros/fixed_policy.svh"
-`include "macros/ranged_policy.svh"
-`include "macros/set_policy.svh"
-
-`endif_POLICY_IMP(cls)                   \
-    typedef policy_imp#(cls) LOCAL_POLICY_T;
-
-
-//================================================
-// Policy template macros
-//================================================
-
-`include "macros/constant_policy.svh"
-`include "macros/fixed_policy.svh"
-`include "macros/ranged_policy.svh"
-`include "macros/set_policy.svh"
-
-`endif                                                       \
+        function new(                                                         \
             l_field_array_t values,                                           \
             bit    inside=1'b1,                                               \
             string radix=RADIX                                                \
