@@ -78,13 +78,12 @@
 // Policy constructor definition
 `define SET_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                     \
     typedef TYPE POLICY``_array_t[];                                          \
-    static function policy POLICY(                                            \
+    static function POLICY``_policy POLICY(                                   \
         POLICY``_array_t values,                                              \
         bit              inside=1'b1,                                         \
         string           radix=RADIX                                          \
     );                                                                        \
-        POLICY``_policy new_pcy = new(values, inside, radix);                 \
-        return (new_pcy);                                                     \
+        POLICY = new(values, inside, radix);                                  \
     endfunction: POLICY
 
 `endif

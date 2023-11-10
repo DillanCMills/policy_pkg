@@ -80,14 +80,13 @@
 
 // Policy constructor definition
 `define RANGED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                  \
-    static function policy POLICY(                                            \
+    static function POLICY``_policy POLICY(                                   \
         TYPE   low,                                                           \
         TYPE   high=low,                                                      \
         bit    inside=1'b1,                                                   \
         string radix=RADIX                                                    \
     );                                                                        \
-        POLICY``_policy new_pcy = new(low, high, inside, radix);              \
-        return (new_pcy);                                                     \
+        POLICY = new(low, high, inside, radix);                               \
     endfunction: POLICY
 
 `endif

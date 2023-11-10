@@ -33,9 +33,8 @@
 
 // Policy constructor definition
 `define CONST_POLICY_CONSTRUCTOR(POLICY)                                      \
-    static function policy POLICY();                                          \
-        POLICY``_policy new_pcy = new();                                      \
-        return (new_pcy);                                                     \
+    static function POLICY``_policy POLICY();                                 \
+        POLICY = new();                                                       \
     endfunction: POLICY
 
 `endif 
