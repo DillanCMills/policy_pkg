@@ -7,7 +7,6 @@ class addr_policy extends policy_imp#(addr_txn);
     endfunction
 endclass
 
-
 class addr_permit_policy extends addr_policy;
     rand int selection;
 
@@ -23,7 +22,6 @@ class addr_permit_policy extends addr_policy;
         }
     }
 endclass
-
 
 class addr_prohibit_policy extends addr_policy;
     constraint c_addr_prohibit {

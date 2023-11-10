@@ -30,7 +30,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 }
 
 \usemintedstyle{one-dark}
-\captionsetup{hypcap=false}
+\captionsetup{hypcap=false, position=top}
 
 \newcommand{\svfile}[2]{{
 \begin{mdframed}
@@ -149,7 +149,7 @@ The new address transaction classes are simplified considerably. Only a single p
 
 \section{Problem \#2: Definition Location}
 
-The second problem is ``where do I define my policy classes?'' This is not a complicated problem to solve, and most users likely place their policy classes in a file close to the class they are constraining. However, by explicitly pairing policy definitions with the class they constrain, users never need to hunt for the definitions or guess where they are located, and the definitions are given an appropriate and consistent home in the environment. This is done by embedding a \code{POLICIES} class inside the class being constrained. This class acts as a container for all relevant policies and allows policies to be created by simply referencing the embedded class through the \code{::|}operator.
+The second problem is ``where do I define my policy classes?'' This is not a complicated problem to solve, and most users likely place their policy classes in a file close to the class they are constraining. However, by explicitly pairing policy definitions with the class they constrain, users never need to hunt for the definitions or guess where they are located, and the definitions are given an appropriate and consistent home in the environment. This is done by embedding a \code{POLICIES} class inside the class being constrained. This class acts as a container for all relevant policies and allows policies to be created by simply referencing the embedded class through the \code{::}operator.
 
 \svfile{example_code/v4_embedded_policies/addr_txn.svh}{Address transaction classes with embedded policies}
 

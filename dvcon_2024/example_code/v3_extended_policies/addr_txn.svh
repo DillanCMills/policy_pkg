@@ -10,13 +10,11 @@ class addr_txn extends uvm_object;
     endfunction
 endclass
 
-
 class addr_p_txn extends addr_txn;
   rand bit parity;
 
   constraint c_parity {parity == $countones(addr) % 2;}
 endclass
-
 
 class addr_constrained_txn extends addr_p_txn;
     function new;
