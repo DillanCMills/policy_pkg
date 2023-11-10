@@ -1,4 +1,4 @@
-class addr_l1_txn;
+class addr_l1_txn extends uvm_object;
     rand bit [31:0]   addr;
     rand int          size;
     rand policy_queue policy;
@@ -18,19 +18,19 @@ endclass
 
 class addr_constrained_txn extends addr_l2_txn;
     function new;
-        policy_queue pcy = new;
+        policy_queue pcy;
 
-        addr_permit_policy::base_policy   permit   = addr_permit_policy::PERMIT_POLICY();
-        addr_prohibit_policy::base_policy prohibit = addr_prohibit_policy::PROHIBIT_POLICY();
+        addr_permit_policy::addr_range_permit_policy     permit   = addr_permit_policy::PERMIT_POLICY();
+        addr_prohibit_policy::addr_range_prohibit_policy prohibit = addr_prohibit_policy::PROHIBIT_POLICY();
 
         permit.add('h00000000, 'h0000FFFF);
         permit.add('h10000000, 'h1FFFFFFF);
-        pcy.add(permit);
+        pcy.push_back(permit);
 
         prohibit.add('h13000000, 'h130FFFFF);
-        pcy.add(prohibit);
+        pcy.push_back(prohibit);
         
-        pcy.add(addr_l2_policy::FIXED_F2('h12345678));
+        pcy.push_back(addr_l2_policy::FIXED_F2('h12345678));
 
         this.policy = {pcy};
     endfunction
