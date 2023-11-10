@@ -1,46 +1,48 @@
-class addr_l1_txn;
+class addr_txn;
   rand bit [31:0] addr;
   rand int        size;
-  rand policy_base#(addr_l1_txn) policy_l1[$];
+  rand policy_base#(addr_txn) addr_policy[$];
 
   constraint c_size {size inside {1, 2, 4};}
 
   function void pre_randomize;
-    foreach(policy_l1[i]) policy_l1[i].set_item(this);
+    foreach(addr_policy[i]) addr_policy[i].set_item(this);
   endfunction
 endclass
 
 
-class addr_l2_txn extends addr_l1_txn;
-  rand int f2;
-  rand policy_base#(addr_l2_txn) policy_l2[$];
+class addr_p_txn extends addr_txn;
+  rand bit parity;
+  rand policy_base#(addr_p_txn) addr_p_policy[$];
+
+  constraint c_parity {parity == $countones(addr) % 2;}
 
   function void pre_randomize;
     super.pre_randomize();
-    foreach(policy_l2[i]) policy_l2[i].set_item(this);
+    foreach(addr_p_policy[i]) addr_p_policy[i].set_item(this);
   endfunction
 endclass
 
 
-class addr_constrained_txn extends addr_l2_txn;
+class addr_constrained_txn extends addr_p_txn;
   function new;
     addr_permit_policy        permit = new;
     addr_prohibit_policy      prohibit = new;
-    addr_l2_policy            l2 = new;
-    policy_list#(addr_l1_txn) pcy_l1 = new;
-    policy_list#(addr_l2_txn) pcy_l2 = new;
+    addr_parity_policy        parity = new;
+    policy_list#(addr_txn)    addr_pcy = new;
+    policy_list#(addr_p_txn)  addr_p_pcy = new;
 
     permit.add('h00000000, 'h0000FFFF);
     permit.add('h10000000, 'h1FFFFFFF);
-    pcy_l1.add(permit);
+    addr_pcy.add(permit);
 
     prohibit.add('h13000000, 'h130FFFFF);
-    pcy_l1.add(prohibit);
+    addr_pcy.add(prohibit);
     
-    l2.set('h12345678);
-    pcy_l2.add(l2);
+    parity.set(1'b1);
+    addr_p_pcy.add(parity);
 
-    this.policy_l1 = {pcy_l1};
-    this.policy_l2 = {pcy_l2};
+    this.addr_policy   = {addr_pcy};
+    this.addr_p_policy = {addr_p_pcy};
   endfunction
 endclass

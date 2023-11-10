@@ -1,4 +1,4 @@
-class addr_l1_txn extends uvm_object;
+class addr_txn extends uvm_object;
     rand bit [31:0]   addr;
     rand int          size;
     rand policy_queue policy;
@@ -9,22 +9,24 @@ class addr_l1_txn extends uvm_object;
         foreach(policy[i]) policy[i].set_item(this);
     endfunction
 
-    `start_policies(addr_l1_txn)
+    `start_policies(addr_txn)
         `include "addr_policies.svh"
     `end_policies
 endclass
 
 
-class addr_l2_txn extends addr_l1_txn;
-    rand int f2;
+class addr_p_txn extends addr_txn;
+    rand bit parity;
 
-    `start_extended_policies(addr_l2_txn, addr_l1_txn)
-        `fixed_policy(FIXED_F2, int, f2)
+    constraint c_parity {parity == $countones(addr) % 2;}
+
+    `start_extended_policies(addr_p_txn, addr_txn)
+        `fixed_policy(FIXED_PARITY, bit, parity)
     `end_policies
 endclass
 
 
-class addr_constrained_txn extends addr_l2_txn;
+class addr_constrained_txn extends addr_p_txn;
     function new;
         policy_queue pcy;
 
@@ -38,7 +40,7 @@ class addr_constrained_txn extends addr_l2_txn;
         prohibit.add('h13000000, 'h130FFFFF);
         pcy.push_back(prohibit);
         
-        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_F2('h12345678));
+        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
 
         this.policy = {pcy};
     endfunction

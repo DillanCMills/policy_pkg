@@ -1,4 +1,4 @@
-class addr_l1_txn extends uvm_object;
+class addr_txn extends uvm_object;
     rand bit [31:0]   addr;
     rand int          size;
     rand policy_queue policy;
@@ -11,18 +11,20 @@ class addr_l1_txn extends uvm_object;
 endclass
 
 
-class addr_l2_txn extends addr_l1_txn;
-    rand int f2;
+class addr_p_txn extends addr_txn;
+  rand bit parity;
+
+  constraint c_parity {parity == $countones(addr) % 2;}
 endclass
 
 
-class addr_constrained_txn extends addr_l2_txn;
+class addr_constrained_txn extends addr_p_txn;
     function new;
         policy_queue pcy;
 
         addr_permit_policy   permit   = new();
         addr_prohibit_policy prohibit = new();
-        addr_l2_policy       fixed_f2;
+        addr_parity_policy   fixed_p;
 
         permit.add('h00000000, 'h0000FFFF);
         permit.add('h10000000, 'h1FFFFFFF);
@@ -31,8 +33,8 @@ class addr_constrained_txn extends addr_l2_txn;
         prohibit.add('h13000000, 'h130FFFFF);
         pcy.push_back(prohibit);
         
-        fixed_f2 = new('h12345678);
-        pcy.push_back(fixed_f2);
+        fixed_p = new(1'b1);
+        pcy.push_back(fixed_p);
 
         this.policy = {pcy};
     endfunction

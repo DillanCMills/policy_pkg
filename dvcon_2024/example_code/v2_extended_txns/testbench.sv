@@ -9,6 +9,6 @@ module tb;
     addr_constrained_txn txn = new();
     txn.randomize();
     $display("addr=%0h", txn.addr);
-    $display("f2=%0h", txn.f2);
+    $display("parity=%0h", txn.parity);
   end
 endmodule

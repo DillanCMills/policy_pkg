@@ -1,4 +1,4 @@
-class addr_l1_policy extends policy_imp#(addr_l1_txn);
+class addr_policy extends policy_imp#(addr_txn);
     addr_range ranges[$];
 
     function void add(addr_t min, addr_t max);
@@ -8,18 +8,18 @@ class addr_l1_policy extends policy_imp#(addr_l1_txn);
 endclass
 
 
-class addr_l2_policy extends policy_imp#(addr_l2_txn);
-    protected int f2;
+class addr_parity_policy extends policy_imp#(addr_p_txn);
+    protected bit parity;
 
-    constraint c_fixed_value {m_item != null -> m_item.f2 == f2;}
+    constraint c_fixed_value {m_item != null -> m_item.parity == parity;}
 
-    function new(int value);
-        this.f2 = value;
+    function new(int parity);
+        this.parity = parity;
     endfunction
 endclass
 
 
-class addr_permit_policy extends addr_l1_policy;
+class addr_permit_policy extends addr_policy;
     rand int selection;
 
     constraint c_addr_permit {
@@ -36,7 +36,7 @@ class addr_permit_policy extends addr_l1_policy;
 endclass
 
 
-class addr_prohibit_policy extends addr_l1_policy;
+class addr_prohibit_policy extends addr_policy;
     constraint c_addr_prohibit {
         m_item != null -> (
             foreach(ranges[i]) {
