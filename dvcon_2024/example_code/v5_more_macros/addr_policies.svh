@@ -9,48 +9,6 @@ class addr_l1_policy;
 endclass
 
 
-class addr_l2_policy extends addr_l1_policy;
-  // typedef policy_base#(addr_l2_txn) LOCAL_POLICY_T;
-  int f2;
-  
-  function void set(int f2);
-    this.f2 = f2;
-  endfunction
-  
-  constraint c_f2 {
-    item.f2 == f2;
-  }
-endclass
-
-
-class addr_l3_policy extends addr_l2_policy;
-  // typedef policy_base#(addr_l3_txn) LOCAL_POLICY_T;
-  int f3;
-  
-  function void set(int f3);
-    this.f3 = f3;
-  endfunction
-  
-  constraint c_f3 {
-    item.f3 == f3;
-  }
-endclass
-
-
-class addr_l4_policy extends addr_l3_policy;
-  // typedef policy_base#(addr_l4_txn) LOCAL_POLICY_T;
-  int f4;
-  
-  function void set(int f4);
-    this.f4 = f4;
-  endfunction
-  
-  constraint c_f4 {
-    item.f4 == f4;
-  }
-endclass
-
-
 class addr_permit_policy extends addr_l1_policy;
   rand int selection;
 
