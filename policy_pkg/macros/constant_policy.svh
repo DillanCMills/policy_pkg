@@ -11,16 +11,24 @@
     class POLICY``_policy extends LOCAL_POLICY_T                              \
         typedef TYPE l_field_t;                                               \
                                                                               \
+        virtual function string name();                                       \
+            return (`"POLICY`");                                              \
+        endfunction: name                                                     \
+                                                                              \
+        virtual function string description();                                \
+            return (`"(field==constant)`");                                   \
+        endfunction: description                                              \
+                                                                              \
+        virtual function policy copy();                                       \
+            copy = new();                                                     \
+        endfunction: copy                                                     \
+                                                                              \
         constraint c_const_value {                                            \
             (item != null) -> (item.field == l_field_t'(constant));           \
         }                                                                     \
                                                                               \
         function new();                                                       \
         endfunction: new                                                      \
-                                                                              \
-        virtual function string name();                                       \
-            return (`"POLICY(field==constant)`");                             \
-        endfunction: name                                                     \
     endclass: POLICY``_policy
 
 // Policy constructor definition
