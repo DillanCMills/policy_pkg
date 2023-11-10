@@ -1,20 +1,20 @@
-class policy_base#(type ITEM=uvm_object);
-    ITEM item;
-
-    virtual function void set_item(ITEM item);
-        this.item = item;
-    endfunction
+interface class policy;
+    pure virtual function void set_item(uvm_object item);
 endclass
 
 
-class policy_list#(type ITEM=uvm_object) extends policy_base#(ITEM);
-    rand policy_base#(ITEM) policy[$];
+virtual class policy_imp#(type ITEM=uvm_object) implements policy;
 
-    function void add(policy_base#(ITEM) pcy);
-        policy.push_back(pcy);
-    endfunction
+    protected rand ITEM m_item;
 
-    function void set_item(ITEM item);
-        foreach(policy[i]) policy[i].set_item(item);
-    endfunction
-endclass
+    virtual function void set_item(uvm_object item);
+        if (!$cast(m_item, item)) begin
+            `uvm_warning("policy::set_item()", "Item is not compatible with policy type")
+            this.m_item = null;
+            this.m_item.rand_mode(0);
+        end
+    endfunction: set_item
+endclass: policy_imp
+
+
+typedef policy policy_queue[$];

@@ -15,7 +15,7 @@ class addr_l2_policy extends policy_base#(addr_l2_txn);
     this.f2 = f2;
   endfunction
   
-  constraint c_f2 {
+  constraint c_fixed_value {
     item.f2 == f2;
   }
 endclass
