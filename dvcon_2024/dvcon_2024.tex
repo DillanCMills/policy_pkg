@@ -93,106 +93,24 @@ txn.randomize() with {addr == 32'hdeadbeef;};
 
 Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of his approach can be found by examining the following code.
 
-\begin{svcode}
-class policy_base#(type ITEM=uvm_object);
-    ITEM item;
-
-    virtual function void set_item(ITEM item);
-        this.item = item;
-    endfunction
-endclass
-
-
-class policy_list#(type ITEM=uvm_object) extends policy_base#(ITEM);
-    rand policy_base#(ITEM) policy[$];
-
-    function void add(policy_base#(ITEM) pcy);
-        policy.push_back(pcy);
-    endfunction
-
-    function void set_item(ITEM item);
-        foreach(policy[i]) policy[i].set_item(item);
-    endfunction
-endclass
-\end{svcode}
+\svfile{example_code/v1_original_policies/policy_base.svh}
 
 These first two classes provide the base class types for the actual policies. This allows different, related policies to be grouped together in \code{policy_list} and applied to the randomization call concurrently. Both of these classes are parameterized to a specific object type, so separate instances will be required for each class type that needs to be constrained.
 
-\begin{svcode}
-class addr_policy_base extends policy_base#(addr_txn);
-    addr_range ranges[$];
 
-    function add(addr_t min, addr_t max);
-        addr_range rng = new(min, max);
-        ranges.push_back(rng);
-    endfunction
-endclass
-
-
-class addr_permit_policy extends addr_policy_base;
-    rand int selection;
-
-    constraint c_addr_permit {
-        selection inside {[0:ranges.size()-1]};
-
-        foreach(ranges[i]) {
-            if(selection == i) {
-                item.addr inside {[ranges[i].min:ranges[i].max - item.size]};
-            }
-        }
-    }
-endclass
-
-
-class addr_prohibit_policy extends addr_policy_base;
-    constraint c_addr_prohibit {
-        foreach(ranges[i]) {
-            !(item.addr inside {[ranges[i].min:ranges[i].max - item.size + 1]});
-        }
-    }
-endclass
-\end{svcode}
+\svfile{example_code/v1_original_policies/addr_policies.svh}
 
 The next three classes contain implementations of the \code{policy_base} class for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
 
-\begin{svcode}
-class addr_txn;
-    rand bit [31:0] addr;
-    rand int        size;
-    rand policy_base#(addr_txn) policy[$];
 
-    constraint c_size {size inside {1, 2, 4};}
-
-    function void pre_randomize;
-        foreach(policy[i]) policy[i].set_item(this);
-    endfunction
-endclass
-
-
-class addr_constrained_txn extends addr_txn;
-    function new;
-        addr_permit_policy    permit = new;
-        addr_prohibit_policy  prohibit = new;
-        policy_list#(addr_txn) pcy = new;
-
-        permit.add('h00000000, 'h0000FFFF);
-        permit.add('h10000000, 'h1FFFFFFF);
-        pcy.add(permit);
-
-        prohibit.add('h13000000, 'h130FFFFF);
-        pcy.add(prohibit);
-
-        this.policy = {pcy};
-    endfunction
-endclass
-\end{svcode}
+\svfile{example_code/v1_original_policies/addr_txn.svh}
 
 The final two classes show how these policies are used. The \code{addr_txn} class creates a \code{policy} queue, and during the \code{pre_randomize} function sets the handle to the \code{item} object within each policy to itself. The \code{addr_constrained_txn} subclass adds two policies to a local \code{pcy} list, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
 
 At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the policies provided.
 
 \begin{svcode}
-addr_txn txn = new();
+addr_constrained_txn txn = new();
 txn.randomize();
 \end{svcode}
 
@@ -206,44 +124,48 @@ The first problem with the above policy implementation is that because policies 
 
 \begin{svcode}
 class addr_l2_txn extends addr_l1_txn;
-    // ...
+  rand int f2;
+  rand policy_base#(addr_l2_txn) policy_l2[$];
+
+  function void pre_randomize;
+    super.pre_randomize();
+    foreach(policy_l2[i]) policy_l2[i].set_item(this);
+  endfunction
 endclass
 
-class addr_l3_txn extends addr_l2_txn;
-    // ...
-endclass
-
-class addr_l4_txn extends addr_l3_txn;
-    // ...
-endclass
+// ... repeat for addr_l3_txn and addr_l4_txn
 
 class addr_constrained_txn extends addr_l4_txn;
-    // ... new rand fields that need to be constrained
-    rand policy_base#{addr_l4_txn} policy_l4[$];
-
     function new;
         addr_permit_policy        permit = new;
         addr_prohibit_policy      prohibit = new;
-        // ... additional policies for the subsequent layers
+        addr_l2_policy            l2 = new;
+        addr_l3_policy            l3 = new;
+        addr_l4_policy            l4 = new;
         policy_list#(addr_l1_txn) pcy_l1 = new;
         policy_list#(addr_l2_txn) pcy_l2 = new;
         policy_list#(addr_l3_txn) pcy_l3 = new;
         policy_list#(addr_l4_txn) pcy_l4 = new;
 
-        // ... add all the policies to the correct list
+        permit.add('h00000000, 'h0000FFFF); 
+        permit.add('h10000000, 'h1FFFFFFF); 
+        pcy_l1.add(permit);
+        prohibit.add('h13000000, 'h130FFFFF); 
+        pcy_l1.add(prohibit);
+
+        l2.set('h12345678); pcy_l2.add(l2);
+        l3.set('h55555555); pcy_l3.add(l3);
+        l4.set('h87654321); pcy_l4.add(l4);
 
         this.policy_l1 = {pcy_l1};
         this.policy_l2 = {pcy_l2};
         this.policy_l3 = {pcy_l3};
         this.policy_l4 = {pcy_l4};
     endfunction
-
-    function void pre_randomize;
-        super.pre_randomize();
-        foreach(policy_l4[i]) policy_l4[i].set_item(this);
-    endfunction
 endclass
 \end{svcode}
+
+This class ends up with a lot of boilerplate code and is not very intuitive to use. The user needs to keep track of what the difference is between each policy list and apply constraints properly. Additionally, more inheritance causes the class to grow further. This would strongly discourage using inheritance, which is not desirable.
 
 The solution to this problem is to introduce class inheritance into the policy classes that mirror the target class hierarchy. So for the four-layered \code{addr_txn} example, four matching policy classes would be created to match.
 
