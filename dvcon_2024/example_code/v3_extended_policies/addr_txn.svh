@@ -20,8 +20,9 @@ class addr_constrained_txn extends addr_l2_txn;
     function new;
         policy_queue pcy;
 
-        addr_permit_policy::addr_range_permit_policy     permit   = addr_permit_policy::PERMIT();
-        addr_prohibit_policy::addr_range_prohibit_policy prohibit = addr_prohibit_policy::PROHIBIT();
+        addr_permit_policy   permit   = new();
+        addr_prohibit_policy prohibit = new();
+        addr_l2_policy       fixed_f2;
 
         permit.add('h00000000, 'h0000FFFF);
         permit.add('h10000000, 'h1FFFFFFF);
@@ -30,7 +31,8 @@ class addr_constrained_txn extends addr_l2_txn;
         prohibit.add('h13000000, 'h130FFFFF);
         pcy.push_back(prohibit);
         
-        pcy.push_back(addr_l2_policy::FIXED_F2('h12345678));
+        fixed_f2 = new('h12345678);
+        pcy.push_back(fixed_f2);
 
         this.policy = {pcy};
     endfunction
