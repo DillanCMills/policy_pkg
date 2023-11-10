@@ -22,7 +22,7 @@ class addr_l2_txn extends addr_l1_txn;
 endclass
 
 
-class addr_constrained_txn extends addr_l4_txn;
+class addr_constrained_txn extends addr_l2_txn;
   function new;
     addr_permit_policy        permit = new;
     addr_prohibit_policy      prohibit = new;
