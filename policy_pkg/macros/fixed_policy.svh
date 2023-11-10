@@ -50,9 +50,8 @@
 
 // Policy constructor definition
 `define FIXED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                   \
-    static function policy POLICY(TYPE value, string radix=RADIX);            \
-        POLICY``_policy new_pcy = new(value, radix);                          \
-        return (new_pcy);                                                     \
+    static function POLICY``_policy POLICY(TYPE value, string radix=RADIX);   \
+        POLICY = new(value, radix);                                           \
     endfunction: POLICY
 
 `endif 
