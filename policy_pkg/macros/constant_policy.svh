@@ -8,7 +8,7 @@
 
 // Policy class definition
 `define CONST_POLICY_CLASS(POLICY, TYPE, field, constant)                     \
-    class POLICY``_policy extends LOCAL_POLICY_T                              \
+    class POLICY``_policy extends base_policy                                 \
         typedef TYPE l_field_t;                                               \
                                                                               \
         virtual function string name();                                       \
