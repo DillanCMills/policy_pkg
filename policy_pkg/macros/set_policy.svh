@@ -8,7 +8,7 @@
 
 // Policy class definition
 `define SET_POLICY_CLASS(POLICY, TYPE, field, RADIX="%0p")                    \
-    class POLICY``_policy extends LOCAL_POLICY_T                              \
+    class POLICY``_policy extends base_policy                                 \
         typedef TYPE        l_field_array_t[];                                \
                                                                               \
         protected l_field_array_t   m_values;                                 \
