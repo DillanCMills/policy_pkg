@@ -10,7 +10,6 @@ class addr_txn;
     endfunction
 endclass
 
-
 class addr_constrained_txn extends addr_txn;
     function new;
         addr_permit_policy    permit = new;

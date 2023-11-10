@@ -6,7 +6,6 @@ class policy_base#(type ITEM=uvm_object);
     endfunction
 endclass
 
-
 class policy_list#(type ITEM=uvm_object) extends policy_base#(ITEM);
     rand policy_base#(ITEM) policy[$];
 

@@ -10,7 +10,6 @@ class addr_txn;
   endfunction
 endclass
 
-
 class addr_p_txn extends addr_txn;
   rand bit parity;
   rand policy_base#(addr_p_txn) addr_p_policy[$];
@@ -22,7 +21,6 @@ class addr_p_txn extends addr_txn;
     foreach(addr_p_policy[i]) addr_p_policy[i].set_item(this);
   endfunction
 endclass
-
 
 class addr_constrained_txn extends addr_p_txn;
   function new;

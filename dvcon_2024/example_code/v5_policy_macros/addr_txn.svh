@@ -14,7 +14,6 @@ class addr_txn extends uvm_object;
     `end_policies
 endclass
 
-
 class addr_p_txn extends addr_txn;
     rand bit parity;
 
@@ -25,23 +24,6 @@ class addr_p_txn extends addr_txn;
     `end_policies
 endclass
 
-
 class addr_constrained_txn extends addr_p_txn;
-    function new;
-        policy_queue pcy;
-
-        addr_constrained_txn::POLICIES::addr_permit_policy   permit   = new();
-        addr_constrained_txn::POLICIES::addr_prohibit_policy prohibit = new();
-
-        permit.add('h00000000, 'h0000FFFF);
-        permit.add('h10000000, 'h1FFFFFFF);
-        pcy.push_back(permit);
-
-        prohibit.add('h13000000, 'h130FFFFF);
-        pcy.push_back(prohibit);
-        
-        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
-
-        this.policy = {pcy};
-    endfunction
+    // ... unchanged from previous example
 endclass
