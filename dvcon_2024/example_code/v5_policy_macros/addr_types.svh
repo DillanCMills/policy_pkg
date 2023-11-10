@@ -10,5 +10,5 @@ class addr_range extends uvm_object;
   endfunction
 endclass
 
-typedef class addr_l1_txn;
-typedef class addr_l2_txn;
+typedef class addr_txn;
+typedef class addr_p_txn;

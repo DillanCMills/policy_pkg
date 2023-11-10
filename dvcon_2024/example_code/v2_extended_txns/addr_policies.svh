@@ -1,4 +1,4 @@
-class addr_policy_base extends policy_base#(addr_l1_txn);
+class addr_policy_base extends policy_base#(addr_txn);
   addr_range ranges[$];
 
   function void add(addr_t min, addr_t max);
@@ -8,15 +8,15 @@ class addr_policy_base extends policy_base#(addr_l1_txn);
 endclass
 
 
-class addr_l2_policy extends policy_base#(addr_l2_txn);
-  int f2;
+class addr_parity_policy extends policy_base#(addr_p_txn);
+  bit parity;
   
-  function void set(int f2);
-    this.f2 = f2;
+  function void set(bit parity);
+    this.parity = parity;
   endfunction
   
   constraint c_fixed_value {
-    item.f2 == f2;
+    item.parity == parity;
   }
 endclass
 

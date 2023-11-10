@@ -1,4 +1,4 @@
-class addr_l1_txn extends uvm_object;
+class addr_txn extends uvm_object;
     rand bit [31:0]   addr;
     rand int          size;
     rand policy_queue policy;
@@ -10,7 +10,7 @@ class addr_l1_txn extends uvm_object;
     endfunction
 
     class POLICIES;
-        class addr_l1_policy extends policy_imp#(addr_l1_txn);
+        class addr_policy extends policy_imp#(addr_txn);
             addr_range ranges[$];
 
             function void add(addr_t min, addr_t max);
@@ -20,7 +20,7 @@ class addr_l1_txn extends uvm_object;
         endclass
 
 
-        class addr_permit_policy extends addr_l1_policy;
+        class addr_permit_policy extends addr_policy;
             rand int selection;
 
             constraint c_addr_permit {
@@ -37,7 +37,7 @@ class addr_l1_txn extends uvm_object;
         endclass
 
 
-        class addr_prohibit_policy extends addr_l1_policy;
+        class addr_prohibit_policy extends addr_policy;
             constraint c_addr_prohibit {
                 m_item != null -> (
                     foreach(ranges[i]) {
@@ -50,28 +50,30 @@ class addr_l1_txn extends uvm_object;
 endclass
 
 
-class addr_l2_txn extends addr_l1_txn;
-    rand int f2;
+class addr_p_txn extends addr_txn;
+    rand bit parity;
 
-    class POLICIES extends addr_l1_txn::POLICIES;
-        class addr_l2_policy extends policy_imp#(addr_l2_txn);
-            protected int f2;
+    constraint c_parity {parity == $countones(addr) % 2;}
 
-            constraint c_fixed_value {m_item != null -> m_item.f2 == f2;}
+    class POLICIES extends addr_txn::POLICIES;
+        class addr_parity_policy extends policy_imp#(addr_p_txn);
+            protected bit parity;
 
-            function new(int value);
-                this.f2 = value;
+            constraint c_fixed_value {m_item != null -> m_item.parity == parity;}
+
+            function new(int parity);
+                this.parity = parity;
             endfunction
         endclass
 
-        static function addr_l2_policy FIXED_F2(int value);
-            FIXED_F2 = new(value);
+        static function addr_parity_policy FIXED_PARITY(bit value);
+            FIXED_PARITY = new(value);
         endfunction 
     endclass: POLICIES
 endclass
 
 
-class addr_constrained_txn extends addr_l2_txn;
+class addr_constrained_txn extends addr_p_txn;
     function new;
         policy_queue pcy;
 
@@ -85,7 +87,7 @@ class addr_constrained_txn extends addr_l2_txn;
         prohibit.add('h13000000, 'h130FFFFF);
         pcy.push_back(prohibit);
         
-        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_F2('h12345678));
+        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
 
         this.policy = {pcy};
     endfunction
