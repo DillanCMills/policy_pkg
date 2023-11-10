@@ -12,5 +12,3 @@ endclass
 
 typedef class addr_l1_txn;
 typedef class addr_l2_txn;
-typedef class addr_l3_txn;
-typedef class addr_l4_txn;

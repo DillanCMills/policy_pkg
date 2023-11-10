@@ -47,7 +47,7 @@ class addr_permit_policy extends addr_l1_policy;
         }
     endclass
 
-    static function addr_range_permit_policy PERMIT_POLICY();
+    static function addr_range_permit_policy PERMIT();
         addr_range_permit_policy p = new();
         return p;
     endfunction
@@ -63,7 +63,7 @@ class addr_prohibit_policy extends addr_l1_policy;
         }
     endclass
 
-    static function addr_range_prohibit_policy PROHIBIT_POLICY();
+    static function addr_range_prohibit_policy PROHIBIT();
         addr_range_prohibit_policy p = new();
         return p;
     endfunction
