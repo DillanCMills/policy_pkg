@@ -79,7 +79,7 @@ When working with randomized objects in SystemVerilog, it is typically desired t
 class addr_txn;
     rand bit [31:0] addr;
     rand int        size;
-    
+
     constraint c_size {size inside {1, 2, 4};}
 endclass
 \end{svcode}
@@ -133,7 +133,7 @@ class addr_permit_policy extends addr_policy_base;
     rand int selection;
 
     constraint c_addr_permit {
-        selection inside {[0:ranges.size()-1];}
+        selection inside {[0:ranges.size()-1]};
 
         foreach(ranges[i]) {
             if(selection == i) {
@@ -160,7 +160,7 @@ class addr_txn;
     rand bit [31:0] addr;
     rand int        size;
     rand policy_base#(addr_txn) policy[$];
-    
+
     constraint c_size {size inside {1, 2, 4};}
 
     function void pre_randomize;
@@ -189,7 +189,12 @@ endclass
 
 The final two classes show how these policies are used. The \code{addr_txn} class creates a \code{policy} queue, and during the \code{pre_randomize} function sets the handle to the \code{item} object within each policy to itself. The \code{addr_constrained_txn} subclass adds two policies to a local \code{pcy} list, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
 
-At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the policies provided. 
+At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the policies provided.
+
+\begin{svcode}
+addr_txn txn = new();
+txn.randomize();
+\end{svcode}
 
 Further work on policy-based constraints has been presented since the original DVCon presentation in 2015. Kevin Vasconcellos and Jeff McNeal applied the concept to test configuration and added many nice utilities to the base policy class \cite{b3}. Chuck McClish extended the concept to manage real number values for User Defined Nettypes (UDN) and Unified Power Format (UPF) pins in an analog model \cite{b4}. Additionally, he defined a policy builder class that was used to generically build multiple types of policies while reducing repeated code that was shared between each policy class in the original implementation.
 
@@ -197,7 +202,76 @@ Although there has been extensive research on policies, this paper aims to addre
 
 \section{Problem \#1: Parameterized Policies}
 
-The first problem is that because policies are specialized using parameterization to the class they constrain, different specializations of parameterized classes cannot be grouped and indexed. This is most apparent when creating a class hierarchy. If you extend the target class, then you need a new policy type. The new policy type requires an extra policy list to modify any new attributes in the child class and requires the user to know which layer of the class hierarchy defines each attribute they want to constrain. Imagine a complex class hierarchy with many layers of inheritance and extension, and new constrainable attributes on each layer (one common example is a multi-layered sequence API library, such as the example presented by Jeff Vance \cite{b5}). Using policies becomes cumbersome in this case because you need to manage a separate policy list for each level of the hierarchy and know what each list can and cannot contain. The solution to this problem is to introduce class inheritance into the policy classes that mirror the target class hierarchy, supplemented by convenient macros to keep the solution simple.
+The first problem with the above policy implementation is that because policies are specialized using parameterization to the class they constrain, different specializations of parameterized classes cannot be grouped and indexed. This is most apparent when creating a class hierarchy. If you extend \code{addr_txn} and add additional fields to be constrained, then you need a new policy type. The new policy type requires an extra policy list to modify any new attributes in the child class and requires the user to know which layer of the class hierarchy defines each attribute they want to constrain. Imagine a complex class hierarchy with many layers of inheritance and extension, and new constrainable attributes on each layer (one common example is a multi-layered sequence API library, such as the example presented by Jeff Vance \cite{b5}). Using policies becomes cumbersome in this case because you need to manage a separate policy list for each level of the hierarchy and know what each list can and cannot contain. You could end up with a final class that looks like this:
+
+\begin{svcode}
+class addr_l2_txn extends addr_l1_txn;
+    // ...
+endclass
+
+class addr_l3_txn extends addr_l2_txn;
+    // ...
+endclass
+
+class addr_l4_txn extends addr_l3_txn;
+    // ...
+endclass
+
+class addr_constrained_txn extends addr_l4_txn;
+    // ... new rand fields that need to be constrained
+    rand policy_base#{addr_l4_txn} policy_l4[$];
+
+    function new;
+        addr_permit_policy        permit = new;
+        addr_prohibit_policy      prohibit = new;
+        // ... additional policies for the subsequent layers
+        policy_list#(addr_l1_txn) pcy_l1 = new;
+        policy_list#(addr_l2_txn) pcy_l2 = new;
+        policy_list#(addr_l3_txn) pcy_l3 = new;
+        policy_list#(addr_l4_txn) pcy_l4 = new;
+
+        // ... add all the policies to the correct list
+
+        this.policy_l1 = {pcy_l1};
+        this.policy_l2 = {pcy_l2};
+        this.policy_l3 = {pcy_l3};
+        this.policy_l4 = {pcy_l4};
+    endfunction
+
+    function void pre_randomize;
+        super.pre_randomize();
+        foreach(policy_l4[i]) policy_l4[i].set_item(this);
+    endfunction
+endclass
+\end{svcode}
+
+The solution to this problem is to introduce class inheritance into the policy classes that mirror the target class hierarchy. So for the four-layered \code{addr_txn} example, four matching policy classes would be created to match.
+
+\begin{svcode}
+class addr_l1_policy extends policy_base#(addr_l1_txn);
+    addr_range ranges[$];
+
+    function add(addr_t min, addr_t max);
+        addr_range rng = new(min, max);
+        ranges.push_back(rng);
+    endfunction
+endclass
+
+class addr_l2_policy extends addr_l1_policy;
+    // ... additional fields that are used to constrain the object
+endclass
+
+class addr_l3_policy extends addr_l2_policy;
+    // ... additional fields that are used to constrain the object
+endclass
+
+class addr_l4_policy extends addr_l3_policy;
+    // ... additional fields that are used to constrain the object
+endclass
+\end{svcode}
+
+
+, supplemented by convenient macros to keep the solution simple.
 
 \section{Problem \#2: Definition Location}
 
