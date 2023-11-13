@@ -31,6 +31,10 @@
         endfunction: new                                                      \
                                                                               \
         virtual function string name();                                       \
+            return (`"POLICY`");                                              \
+        endfunction: name                                                     \
+                                                                              \
+        virtual function string description();                                \
             string values_str = "";                                           \
                                                                               \
             foreach(m_values[i])                                              \
@@ -45,7 +49,11 @@
                 values_str,                                                   \
                 `"})`"                                                        \
             });                                                               \
-        endfunction: name                                                     \
+        endfunction: description                                              \
+                                                                              \
+        virtual function policy copy();                                       \
+            copy = new(m_values, m_inside, m_radix);                          \
+        endfunction: copy                                                     \
                                                                               \
         virtual function void set_values(l_field_array_t values);             \
             this.m_values = values;                                           \
