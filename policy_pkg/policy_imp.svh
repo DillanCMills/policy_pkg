@@ -29,7 +29,7 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
                 "policy::set_item()",
                 $sformatf(
                     "policy <%s> applied to item <%s>: %s",
-                    this.name(), item.get_name(), this.description
+                    this.name(), item.get_name(), this.description()
                 ),
                 UVM_FULL
             )
