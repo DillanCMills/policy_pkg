@@ -182,9 +182,11 @@ The \code{start_policies}, \code{start_extended_policies}, and \code{end_policie
 
 The base \code{addr_txn} class has complex policies with a relationship between the \code{addr} and \code{size} fields, so rather than creating a policy macro that will only be used once, they can either be left as-is within the embedded policies class, or moved to a separate file and included with \code{`include} as was done here to keep the transaction class simple. The child parity transaction class is able to use the \code{`fixed_policy} macro to constrain the \code{parity} field. The constraint block remains the same as the previous example.
 
-\section{Problem \#4: Unexpected Policy Reuse Behavior}
+\section{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}
 
-A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to find an exact diagnosis of the issue, we transitioned our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. Choosing \code{uvm_object} as a default base class stemmed from this decision. 
+A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to find an exact diagnosis of the issue, we were focused on transitioning our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. This change happened to solve the randomization issue as well.
+
+We expected that we would need hundreds or thousands of policies per test, so we aimed to minimize the memory requirements and streamline functionality as much as possible. To minimize the footprint of policies, we chose to implement them as simple classes rather than extensions of \code{uvm_object}. We duplicated some useful capabilities such as a basic copy routine, while omitting more expensive functionality such as factory compatibility or object comparison. The buggy randomization behavior implied we needed to pass in fresh policy instances each time we randomized an object. Two features helped to accomplish this: static constructor functions and a \code{copy} method.
 
 {\begin{svcode}
 static function addr_parity_policy FIXED_PARITY(bit value);
@@ -195,7 +197,7 @@ pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
 \end{svcode}
 \captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
 
-Using static functions to create new instances of the policies provides an easy way to create and use a policy without needing to store the policy instance in a variable. The policy is created and immediately pushed onto the policy queue. The policy is then discarded and will be recreated the next time it is needed.
+Using static functions to create new instances of the policies provides an easy way to create and use a policy with a single function call. The policy is created and immediately pushed onto the policy queue, then discarded and recreated the next time it is needed.
 
 {\begin{svcode}
 interface class policy;
@@ -206,7 +208,7 @@ endclass: policy
 \captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
 
 
-Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
+Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself with the same configuration. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
 
 After migrating to this pattern of reuse, the issues we were seeing with unapplied constraints disappeared.
 
@@ -218,7 +220,7 @@ The examples presented so far are functional, but are lacking many features that
 
 The following \code{policy} interface class adds additional methods for managing a policy.
 
-\svfile{example_code/v6_improved_api/policy.svh}{Expanded \code{policy} interface class}
+\svfilerange{../policy_pkg/policy.svh}{4}{18}{Expanded \code{policy} interface class}
 
 The \code{name}, \code{description}, and \code{copy} methods are implemented by the policy (or policy macro) directly and provide reporting information useful when printing messages about the policy to the log for the former two, or specific behavior for making a copy for the latter. The remaining three methods are implemented by \code{policy_imp} and are shared by all policies. 
 
@@ -293,9 +295,21 @@ class cfg_object extends policy_object #(uvm_object);
 
 Each of these classes will contain a separate policy queue, but each will share an API and can be used in the same way. The \code{policy_object} base class can be used as a mixin to any class that needs to manage a policy queue.
 
+\subsection{Protecting the policy queue}
+
+A subtle but significant additional benefit to using a base \code{policy_object} class along with the \code{policy_container} API is the ability to mark the container's policy queue as protected and prevent direct access to it. 
+
+The original implementation called \code{set_item} on each policy during the \code{pre_randomize} stage. That was necessary because the \code{policy_queue} was public, so there was nothing to prevent callers from adding policies without linking them to the target class.
+
+Using an interface class and making the implementation private means the callers may only set or add policies using the available interface class rountines, and because those routines are solely responsible for applying policies, they can also check compatibility (and filter incompatible policies) and call \code{set_item} immediately. This can be seen in the example \code{policy_object} implementation above, in the usage of the protected function \code{try_add_policy}.
+
+By calling \code{set_item} when the policy is added to the queue, all policies will be associated with the target item automatically, so there is no need to do it during \code{pre_randomize}. This eliminates an easily-overlooked requirement for classes extending \code{policy_object} to make sure they call \code{super.pre_randomize()} in their local \code{pre_randomize} function.
+
 \section{Conclusion}
 
-The complete policy package is available in Appendix \ref{policy_pkg}, with additional macro examples available in Appendix \ref{policy_macros}. A functional package is also available \cite{b6} which can be included directly in a project to start using policies immediately.
+The improvements to the policy package presented in this paper provide a more robust and efficient implementation of policy-based constraints for SystemVerilog. The policy package is now capable of managing constraints across an entire class hierarchy, and the policy definitions are tightly paired with the class they constrain. The use of macros reduces the expense of defining common policies, while still allowing great flexibility in any custom policies necessary.
+
+The complete policy package is available in Appendix \ref{policy_pkg}, with additional macro examples available in Appendix \ref{policy_macros}. A functional package is also available for download \cite{b6} which can be included directly in a project to start using policies immediately.
 
 \begin{thebibliography}{00}
     \bibitem{b1} J. Dickol, ``SystemVerilog Constraint Layering via Reusable Randomization Policy Classes,'' DVCon, 2015.
