@@ -12,7 +12,8 @@
 \usepackage[T1]{fontenc}
 \usepackage{inconsolata}
 \usepackage{caption}
-\usepackage{hyperref}
+% \usepackage{hyperref}
+\usepackage{ifthen}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
 T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -40,7 +41,21 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
     breaklines,
 ]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{#1}
 \end{mdframed}
-\captionof{figure}{#2} 
+\ifthenelse{\equal{#2}{}}{}{\captionof{figure}{#2}}
+}}
+
+\newcommand{\svfilerange}[4]{{
+\begin{mdframed}
+\inputminted[
+    linenos,
+    numbersep=16pt,
+    breaklines,
+    firstline=#2,
+    lastline=#3,
+    firstnumber=1,
+]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{#1}
+\end{mdframed}
+\ifthenelse{\equal{#4}{}}{}{\captionof{figure}{#4}}
 }}
 
 \newcommand{\code}[1]{
@@ -169,11 +184,114 @@ The base \code{addr_txn} class has complex policies with a relationship between 
 
 \section{Problem \#4: Unexpected Policy Reuse Behavior}
 
-A fourth problem we noticed in our usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It appeared as though the policies ``remembered'' being randomized and wouldn't reapply their constraints during subsequent \code{randomize} calls. An exact diagnosis of the issue was not discovered because we transitioned our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. We implemented practices such as static functions to create new instances of the policies and policy methods to return fresh copies of themselves.
+A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to find an exact diagnosis of the issue, we transitioned our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. Choosing \code{uvm_object} as a default base class stemmed from this decision. 
+
+{\begin{svcode}
+static function addr_parity_policy FIXED_PARITY(bit value);
+    FIXED_PARITY = new(value);
+endfunction
+...
+pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
+\end{svcode}
+\captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
+
+Using static functions to create new instances of the policies provides an easy way to create and use a policy without needing to store the policy instance in a variable. The policy is created and immediately pushed onto the policy queue. The policy is then discarded and will be recreated the next time it is needed.
+
+{\begin{svcode}
+interface class policy;
+    ...
+    pure virtual function policy copy();
+endclass: policy
+\end{svcode}
+\captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
+
+
+Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
+
+After migrating to this pattern of reuse, the issues we were seeing with unapplied constraints disappeared.
 
 \section{More Improvements to the Policy Package}
 
 The examples presented so far are functional, but are lacking many features that would be useful in a real-world implementation. The following examples will present additional improvements to the policy package that will make it more practical efficient to use.
+
+\subsection{Expanding the \code{policy} interface class}
+
+The following \code{policy} interface class adds additional methods for managing a policy.
+
+\svfile{example_code/v6_improved_api/policy.svh}{Expanded \code{policy} interface class}
+
+The \code{name}, \code{description}, and \code{copy} methods are implemented by the policy (or policy macro) directly and provide reporting information useful when printing messages about the policy to the log for the former two, or specific behavior for making a copy for the latter. The remaining three methods are implemented by \code{policy_imp} and are shared by all policies. 
+
+\subsection{Better type safety checking and reporting in \code{policy_imp} methods}
+
+Some of the benefits of above methods can be seen by examining the new \code{set_item} method used by \code{policy_imp}.
+
+{\begin{svcode}
+virtual function void set_item(uvm_object item);
+    if (item == null) begin
+        `uvm_error("policy::set_item()", "NULL item passed")
+
+    end else if ((this.item_is_compatible(item)) && $cast(this.m_item, item)) begin
+        `uvm_info(
+            "policy::set_item()",
+            $sformatf(
+                "policy <%s> applied to item <%s>: %s",
+                this.name(), item.get_name(), this.description()
+            ),
+            UVM_FULL
+        )
+        this.m_item.rand_mode( 1 );
+
+    end else begin
+        `uvm_warning(
+            "policy::set_item()",
+            $sformatf(
+                "Item <%s> type <%s> is not compatible with policy <%s> type <%s>",
+                item.get_name(), item.get_type_name(), this.name(), this.type_name()
+            )
+        )
+        this.m_item = null;
+        this.m_item.rand_mode( 0 );
+    end
+endfunction: set_item
+\end{svcode}
+\captionof{figure}{\code{set_item} method from \code{policy_imp}}}
+
+The \code{set_item} method makes use of all the reporting methods to provide detailed log messages when \code{set_item} succeeds or fails. Additionally, the \code{item_is_compatible} is used before the \code{\$cast} method is called and the \code{rand_mode} state is kept consistent with the result of the cast.
+
+\subsection{Replacing \code{policy_list} with \code{policy_queue} and \code{policy_container}}
+
+Eagle-eyed readers might have noticed the lack of presence of a \code{policy_list} class in any of the examples above after migrating to the improved policy interface. Rather, a single typedef is all that is necessary to manage policies in a class.
+
+{\begin{svcode}
+typedef policy policy_queue[$];
+\end{svcode}
+\captionof{figure}{}}
+
+The \code{policy_queue} type is capable of storing any policy that implements the \code{policy} interface. The default queue methods are sufficient for basic usage, but by introducing another interface class, the direct management of the queue can be abstracted away from the user.
+
+\svfilerange{../policy_pkg/policy_container.svh}{4}{22}{The \code{policy_container} interface class}
+
+This interface class should be implemented by any class that needs to manage a policy queue. The method implementations can then be used to manipulate a policy queue as needed, including adding to, replacing, or clearing the queue, and returning a handle to the queue or a copy of the queue to use elsewhere.
+
+\subsection{Creating a \code{policy_container} base class implementation}
+
+The \code{policy_container} interface class allows for a base class implementation that can be used to manage constraints across the entire class hierarchy. 
+
+\svfilerange{../policy_pkg/policy_object.svh}{4}{55}{A \code{policy_object} base class implementation}
+
+This base class implements all the \code{policy_container} functionality. Treating it as a mixin allows you to apply it to different categories of transactions.
+
+{\begin{svcode}
+class base_txn extends policy_object #(uvm_sequence_item);
+
+class base_seq #(type REQ=uvm_sequence_item, RSP=REQ) extends policy_object #( uvm_sequence#(REQ, RSP) );
+
+class cfg_object extends policy_object #(uvm_object);
+\end{svcode}
+\captionof{figure}{Example classes using the \code{policy_object} base class}}
+
+Each of these classes will contain a separate policy queue, but each will share an API and can be used in the same way. The \code{policy_object} base class can be used as a mixin to any class that needs to manage a policy queue.
 
 \section{Conclusion}
 
@@ -185,7 +303,7 @@ The complete policy package is available in Appendix \ref{policy_pkg}, with addi
     \bibitem{b3} K. Vasconcellos, J. McNeal, ``Configuration Conundrum: Managing Test Configuration with a Bite-Sized Solution,'' DVCon, 2021.
     \bibitem{b4} C. McClish, ``Bi-Directional UVM Agents and Complex Stimulus Generation for UDN and UPF Pins,'' DVCon, 2021.
     \bibitem{b5} J. Vance, J. Montesano, M. Litterick, J. Sprott, ``Be a Sequence Pro to Avoid Bad Con Sequences,'' DVCon, 2019.
-    \bibitem{b6} D. Mills, C. Haldane, ``policy\_pkg Source Code,'' \url{https://github.com/DillanCMills/policy_pkg}.
+    \bibitem{b6} D. Mills, C. Haldane, ``policy\_pkg Source Code,'' https://github.com/DillanCMills/policy\_pkg.
 \end{thebibliography}
 
 \newpage
@@ -204,9 +322,6 @@ The complete policy package is available in Appendix \ref{policy_pkg}, with addi
 
 \subsection{policy\_imp.svh}
 \svfile{../policy_pkg/policy_imp.svh}{}
-
-\subsection{policy\_list.svh}
-\svfile{../policy_pkg/policy_list.svh}{}
 
 \newpage
 \section{Policy Macros}\label{policy_macros}
