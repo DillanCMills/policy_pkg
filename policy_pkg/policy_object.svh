@@ -39,7 +39,7 @@ class policy_object #(type BASE=uvm_object) extends BASE implements policy_conta
     virtual function policy_queue copy_policies();
         copy_policies = {};
         foreach( this.m_policies[i] ) begin
-            copy_policies.push_back( this.m_policies[i].copy );
+            copy_policies.push_back( this.m_policies[i].copy() );
         end
     endfunction: copy_policies
 
