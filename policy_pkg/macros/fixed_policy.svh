@@ -24,12 +24,20 @@
         endfunction: new                                                      \
                                                                               \
         virtual function string name();                                       \
+            return (`"POLICY`");                                              \
+        endfunction: name                                                     \
+                                                                              \
+        virtual function string description();                                \
             return ({                                                         \
-                `"POLICY(field==",                                            \
+                `"(field==",                                                  \
                 $sformatf(m_radix, m_fixed_value),                            \
                 `")`"                                                         \
             });                                                               \
-        endfunction: name                                                     \
+        endfunction: description                                              \
+                                                                              \
+        virtual function policy copy();                                       \
+            copy = new(m_fixed_value, m_radix);                               \
+        endfunction: copy                                                     \
                                                                               \
         virtual function void set_value(TYPE value);                          \
             this.m_fixed_value = value;                                       \
@@ -38,7 +46,7 @@
         virtual function TYPE get_value();                                    \
             return (this.m_fixed_value);                                      \
         endfunction: get_value                                                \
-
+                                                                              \
         virtual function void set_radix(string radix);                        \
             this.m_radix = radix;                                             \
         endfunction: set_radix                                                \

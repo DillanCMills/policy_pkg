@@ -33,15 +33,23 @@
         endfunction: new                                                      \
                                                                               \
         virtual function string name();                                       \
+            return (`"POLICY`");                                              \
+        endfunction: name                                                     \
+                                                                              \
+        virtual function string description();                                \
             return ({                                                         \
-                `"POLICY(field ",                                             \
+                `"(field ",                                                   \
                 m_inside ? "inside [" : "outside [",                          \
                 $sformatf(m_radix, m_low),                                    \
                 ", ",                                                         \
                 $sformatf(m_radix, m_high),                                   \
                 `"])`"                                                        \
             });                                                               \
-        endfunction: name                                                     \
+        endfunction: description                                              \
+                                                                              \
+        virtual function policy copy();                                       \
+            copy = new(m_low, m_high, m_inside, m_radix);                     \
+        endfunction: copy                                                     \
                                                                               \
         virtual function void set_range(TYPE low, TYPE high);                 \
             if (low <= high) begin                                            \

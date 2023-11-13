@@ -12,8 +12,8 @@ endclass
 
 class addr_constrained_txn extends addr_txn;
     function new;
-        addr_permit_policy    permit = new;
-        addr_prohibit_policy  prohibit = new;
+        addr_permit_policy     permit = new;
+        addr_prohibit_policy   prohibit = new;
         policy_list#(addr_txn) pcy = new;
 
         permit.add('h00000000, 'h0000FFFF);
