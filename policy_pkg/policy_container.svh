@@ -19,7 +19,6 @@ interface class policy_container;
     // Copy
     pure virtual function policy_queue copy_policies();
 
-
 endclass: policy_container
 
 `endif
