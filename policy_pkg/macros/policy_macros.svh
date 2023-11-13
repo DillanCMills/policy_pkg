@@ -5,18 +5,18 @@
 // Embedded POLICIES class macros
 //================================================
 
-`define start_policies(cls)                     \
-class POLICIES;                                 \
+`define start_policies(cls)                                                   \
+class POLICIES;                                                               \
 `m_base_policy(cls)
 
-`define start_extended_policies(cls, parent)    \
-class POLICIES extends parent::POLICIES;        \
+`define start_extended_policies(cls, parent)                                  \
+class POLICIES extends parent::POLICIES;                                      \
 `m_base_policy(cls)
 
-`define end_policies                            \
+`define end_policies                                                          \
 endclass: POLICIES
 
-`define m_base_policy(cls)                      \
+`define m_base_policy(cls)                                                    \
     typedef policy_imp#(cls) base_policy;
 
 
