@@ -3,11 +3,11 @@
 
 // Full policy definition
 `define ranged_policy(POLICY, TYPE, field, RADIX="%0p")                       \
-`RANGED_POLICY_CLASS(POLICY, TYPE, field, RADIX)                              \
-`RANGED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX)
+`m_ranged_policy_class(POLICY, TYPE, field, RADIX)                            \
+`m_ranged_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define RANGED_POLICY_CLASS(POLICY, TYPE, field, RADIX="%0p")                 \
+`define m_ranged_policy_class(POLICY, TYPE, field, RADIX="%0p")               \
     class POLICY``_policy extends base_policy                                 \
         typedef TYPE        l_field_t;                                        \
                                                                               \
@@ -87,7 +87,7 @@
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define RANGED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                  \
+`define m_ranged_policy_constructor(POLICY, TYPE, RADIX="%0p")                \
     static function POLICY``_policy POLICY(                                   \
         TYPE   low,                                                           \
         TYPE   high=low,                                                      \

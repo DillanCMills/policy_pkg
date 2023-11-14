@@ -95,7 +95,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \section{Constraints and Policy Class Review}
 
-When working with randomized objects in SystemVerilog, it is typically desired to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constaint check. For example, the following \code{addr_txn} class contains a constraint on the \code{addr} property to ensure it is always word aligned.
+When working with randomized objects in SystemVerilog, it is typically desired to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constaint check. For example, the following \code{addr_txn} class contains a constraint on the \code{size} property to ensure the address is always word aligned.
 
 {\begin{svcode}
 class addr_txn;
@@ -107,7 +107,7 @@ endclass
 \end{svcode}
 \captionof{figure}{A basic address transaction class}}
 
-Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. For example, the same \code{addr_txn} class can have an instance of it randomized with the following constraint on its \code{data} property.
+Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. For example, the same \code{addr_txn} class can have an instance of it randomized with the following constraint on its \code{addr} property.
 
 {\begin{svcode}
 addr_txn txn = new();
@@ -147,13 +147,13 @@ Although there has been extensive research on policies, this paper aims to addre
 
 The first problem with the above policy implementation is that because policies are specialized using parameterization to the class they constrain, different specializations of parameterized classes cannot be grouped and indexed. This is most apparent when creating a class hierarchy. If you wanted to extend a class and add a new field to constrain then you need a new policy type. The new policy type requires an extra policy list to modify any new attributes in the child class and requires the user to know which layer of the class hierarchy defines each attribute they want to constrain. Imagine a complex class hierarchy with many layers of inheritance and extension, and new constrainable attributes on each layer (one common example is a multi-layered sequence API library, such as the example presented by Jeff Vance \cite{b5}). Using policies becomes cumbersome in this case because you need to manage a separate policy list for each level of the hierarchy and know what each list can and cannot contain. For example, extending the \code{addr_txn} class to create a version with parity checking results in a class hierarchy that looks like this:
 
-\svfile{example_code/v2_extended_txns/addr_txn.svh}{Modified address transaction classes with a parity checking subclass  and policies included}
+\svfile{example_code/v2_extended_txns/addr_txn.svh}{Modified address transaction classes with a parity checking subclass and policies included}
 
-This class ends up with a lot of boilerplate code and is not very intuitive to use. The user needs to keep track of what the difference is between each policy list and apply constraints properly. Each additional subclass in a hierarchy will cause the constrained class to grow further. The solution to this problem is to replace the parameterized policy base classes with a combination of a policy interface class and a parameterized policy implementation class. 
+This class ends up with a lot of boilerplate code and is not very intuitive to use. The user needs to keep track of what the difference is between each policy list and apply constraints properly. Each additional subclass in a hierarchy will cause the constrained class to grow further. The solution to this problem is to replace the parameterized policy base with a non-parameterized base and a parameterized extension.  We chose to use an interface class as our non-parameterized container for the flexibility that offers over inheriting from a virtual base class---namely that our parameterized base is free to implement other interfaces, and should the need ever arise, other classes might implement the policy interface.
 
 \svfile{example_code/v3_extended_policies/policy_base.svh}{The \code{policy} interface class and \code{policy_imp} class}
 
-By abstracting the policy functionality into an interface class, all policy implementations under a common base class are given compatibility with each other and can be stored in a shared policy queue. The \code{uvm_object} class is a good base class when using policies within UVM, as it will likely cover every class you will be randomizing. If working with another framework, a reasonable base class will need to be chosen. Because the \code{set_item} function no longer receives a parameterized type input, the input needs to be cast to the implementation type. If this cast fails, the item is set to null and randomization is disabled. 
+Implementing a non-parameterized base (in this case, an interface class) enables all policies targeting a particular class hierarchy to be stored within a single common \code{policy_queue} implemented by the base class of the target class hierarchy. The \code{uvm_object} class is a good base class when using policies within UVM, as it will likely cover every class you will be randomizing. If working with another framework, a reasonable base class will need to be chosen. Because the \code{set_item} function no longer receives a parameterized type input, the input needs to be cast to the implementation type. If this cast fails, the item is set to null and randomization is disabled. 
 
 \svfile{example_code/v3_extended_policies/addr_policies.svh}{Address policies updated to use the new policy implementation}
 
@@ -170,7 +170,9 @@ The second problem is ``where do I define my policy classes?'' This is not a com
 
 \svfile{example_code/v4_embedded_policies/addr_txn.svh}{Address transaction classes with embedded policies}
 
-In the above code, there were few changes from the previous iteration. All the policy classes were migrated into an embedded \code{POLICIES} class, and a static constructor was created for the parity policy to simplify its creation. The parity \code{POLICIES} class was set as a child of the initial \code{POLICIES} class, which further simplified the usage of the classes in the constraint block. Finally, policies in the constraint block are accessed through the \code{addr_constrained_txn::POLICIES::} accessor.
+In the above code, there were few changes from the previous iteration. All the policy classes were migrated into an embedded \code{POLICIES} class, and a static constructor was created for the parity error policy to simplify its creation. The parity \code{POLICIES} class was set as a child of the initial \code{POLICIES} class, which further simplified the usage of the classes in the constraint block. Finally, policies in the constraint block are accessed through the \code{addr_constrained_txn::POLICIES::} accessor.
+
+A nice side effect of embedding policy class definitions within their target classes is that policies have access to protected members of the target class.  This enables meta members of the target class (e.g., "knobs" such as \code{parity_err}) to be defined as protected, preventing external classes from manipulating them directly.  In fact, a more advanced use of policies might define all members of a target class as protected, restricting the setting of fields exclusively through policies and reading through accessor functions, thus encouraging maximum encapsulation/loose coupling, which reduces the cost of maintaining and enhancing code and prevents bugs from cascading into classes that use policy-enabled classes.
 
 \section{Problem \#3: Boilerplate Overload}
 
@@ -182,22 +184,22 @@ The \code{start_policies}, \code{start_extended_policies}, and \code{end_policie
 
 \svfile{example_code/v5_policy_macros/addr_txn.svh}{Simplified address transaction classes using the policy macros}
 
-The base \code{addr_txn} class has complex policies with a relationship between the \code{addr} and \code{size} fields, so rather than creating a policy macro that will only be used once, they can either be left as-is within the embedded policies class, or moved to a separate file and included with \code{`include} as was done here to keep the transaction class simple. The child parity transaction class is able to use the \code{`fixed_policy} macro to constrain the \code{parity} field. The constraint block remains the same as the previous example.
+The base \code{addr_txn} class has complex policies with a relationship between the \code{addr} and \code{size} fields, so rather than creating a policy macro that will only be used once, they can either be left as-is within the embedded policies class, or moved to a separate file and included with \code{`include} as was done here to keep the transaction class simple. The child parity transaction class is able to use the \code{`fixed_policy} macro to constrain the \code{parity_err} field. The constraint block remains the same as the previous example.
 
 \section{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}
 
-A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to find an exact diagnosis of the issue, we were focused on transitioning our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and model them as extremely lightweight classes. This change happened to solve the randomization issue as well.
+A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to find an exact diagnosis of the issue, we were focused on transitioning our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and apply fresh policy instances before re-randomizing a target object. This change happened to solve the randomization issue as well.
 
-We expected that we would need hundreds or thousands of policies per test, so we aimed to minimize the memory requirements and streamline functionality as much as possible. To minimize the footprint of policies, we chose to implement them as simple classes rather than extensions of \code{uvm_object}. We duplicated some useful capabilities such as a basic copy routine, while omitting more expensive functionality such as factory compatibility or object comparison. The buggy randomization behavior implied we needed to pass in fresh policy instances each time we randomized an object. Two features helped to accomplish this: static constructor functions and a \code{copy} method.
+Fortunately, creating new policy instances for each randomization is not prohibitively expensive.  We anticipated that we would need hundreds or thousands of policies per test, so we aimed to minimize the memory requirements and streamline functionality as much as possible. To minimize the footprint of policies, we chose to implement them as simple classes rather than extensions of \code{uvm_object}. We duplicated some useful capabilities such as a basic copy routine, while omitting more expensive functionality such as factory compatibility or object comparison. The buggy randomization behavior implied we needed to pass in fresh policy instances each time we randomized an object. Two features helped to accomplish this: static constructor functions and a \code{copy} method.
 
 {\begin{svcode}
-static function addr_parity_policy FIXED_PARITY(bit value);
-    FIXED_PARITY = new(value);
+static function addr_parity_err_policy PARITY_ERR(bit value);
+    PARITY_ERR = new(value);
 endfunction
 ...
-pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
+pcy.push_back(addr_constrained_txn::POLICIES::PARITY_ERR(1'b1));
 \end{svcode}
-\captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
+\captionof{figure}{Example static constructor function from the \code{PARITY_ERR} policy class}}
 
 Using static functions to create new instances of the policies provides an easy way to create and use a policy with a single function call. The policy is created and immediately pushed onto the policy queue, then discarded and recreated the next time it is needed.
 
@@ -207,7 +209,7 @@ interface class policy;
     pure virtual function policy copy();
 endclass: policy
 \end{svcode}
-\captionof{figure}{Example static constructor function from the \code{FIXED_PARITY} policy class}}
+\captionof{figure}{The \code{copy} method in the \code{policy} interface class}}
 
 
 Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself with the same configuration. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
@@ -263,28 +265,30 @@ endfunction: set_item
 
 The \code{set_item} method makes use of all the reporting methods to provide detailed log messages when \code{set_item} succeeds or fails. Additionally, the \code{item_is_compatible} is used before the \code{\$cast} method is called and the \code{rand_mode} state is kept consistent with the result of the cast.
 
-\subsection{Replacing \code{policy_list} with \code{policy_queue} and \code{policy_container}}
+\subsection{Replacing \code{policy_list} with \code{policy_queue}}
 
 Eagle-eyed readers might have noticed the lack of presence of a \code{policy_list} class in any of the examples above after migrating to the improved policy interface. Rather, a single typedef is all that is necessary to manage policies in a class.
 
 {\begin{svcode}
 typedef policy policy_queue[$];
 \end{svcode}
-\captionof{figure}{}}
+\captionof{figure}{The \code{policy_queue} typedef}}
 
-The \code{policy_queue} type is capable of storing any policy that implements the \code{policy} interface. The default queue methods are sufficient for basic usage, but by introducing another interface class, the direct management of the queue can be abstracted away from the user.
+The \code{policy_queue} type is capable of storing any policy that implements the \code{policy} interface. The default queue methods are sufficient for aggregating policies, and in practice we found that using policy queues as containers was more efficient than \code{policy_list} instances. For example, for functions expecting a \code{policy_queue} argument we can directly pass in array literals populated by calls to static constructor functions, allowing us to define, initialize, aggregate, and pass policies all in a single line of code!
+
+\subsection{Provide a common implementation for policy-enabled classes using the \code{policy_container} interface and \code{policy_object} mixin}
+
+Our solution encourages loosely coupled code by defining APIs that pass \code{policy_queue} arguments and hide a target object's policies queue from other classes.
 
 \svfilerange{../policy_pkg/policy_container.svh}{4}{22}{The \code{policy_container} interface class}
 
-This interface class should be implemented by any class that needs to manage a policy queue. The method implementations can then be used to manipulate a policy queue as needed, including adding to, replacing, or clearing the queue, and returning a handle to the queue or a copy of the queue to use elsewhere.
-
-\subsection{Creating a \code{policy_container} base class implementation}
+This interface class should be implemented by any class that needs to use policies. The method implementations can then be used to manipulate a policy queue as needed, including adding to, replacing, or clearing the queue, and returning a handle to the queue or a copy of the queue to use elsewhere.
 
 The \code{policy_container} interface class allows for a base class implementation that can be used to manage constraints across the entire class hierarchy. 
 
 \svfilerange{../policy_pkg/policy_object.svh}{4}{55}{A \code{policy_object} base class implementation}
 
-This base class implements all the \code{policy_container} functionality. Treating it as a mixin allows you to apply it to different categories of transactions.
+This base class implements all the \code{policy_container} functionality. Packaging a common implementation and interface into a mixin enables sharing a common implementation and API for policy support among any classes that might benefit from the use of policies.
 
 {\begin{svcode}
 class base_txn extends policy_object #(uvm_sequence_item);
@@ -295,9 +299,7 @@ class cfg_object extends policy_object #(uvm_object);
 \end{svcode}
 \captionof{figure}{Example classes using the \code{policy_object} base class}}
 
-Each of these classes will contain a separate policy queue, but each will share an API and can be used in the same way. The \code{policy_object} base class can be used as a mixin to any class that needs to manage a policy queue.
-
-\subsection{Protecting the policy queue}
+\subsection{Protecting the policy queue enforces loosely coupled code}
 
 A subtle but significant additional benefit to using a base \code{policy_object} class along with the \code{policy_container} API is the ability to mark the container's policy queue as protected and prevent direct access to it. 
 

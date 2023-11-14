@@ -18,7 +18,7 @@ class addr_txn extends uvm_object;
             // ... unchanged from previous example
         endclass
 
-        class addr_prohibit_policy extends addr_policy;
+        class addr_prohibit_p_policy extends addr_policy;
             // ... unchanged from previous example
         endclass
     endclass: POLICIES
@@ -26,16 +26,20 @@ endclass
 
 class addr_p_txn extends addr_txn;
     rand bit parity;
-
-    constraint c_parity {parity == $countones(addr) % 2;}
+    rand bit parity_err;
+    
+    constraint c_parity_err {
+        soft (parity_err == 0);
+        (parity_err) ^ ($countones({addr, parity}) == 1);
+    }
 
     class POLICIES extends addr_txn::POLICIES;
-        class addr_parity_policy extends policy_imp#(addr_p_txn);
+        class addr_parity_err_policy extends policy_imp#(addr_p_txn);
             // ... unchanged from previous example
         endclass
 
-        static function addr_parity_policy FIXED_PARITY(bit value);
-            FIXED_PARITY = new(value);
+        static function addr_parity_err_policy PARITY_ERR(bit value);
+            PARITY_ERR = new(value);
         endfunction 
     endclass: POLICIES
 endclass
@@ -44,17 +48,17 @@ class addr_constrained_txn extends addr_p_txn;
     function new;
         policy_queue pcy;
 
-        addr_constrained_txn::POLICIES::addr_permit_policy   permit   = new();
-        addr_constrained_txn::POLICIES::addr_prohibit_policy prohibit = new();
+        addr_constrained_txn::POLICIES::addr_permit_policy   permit_p   = new();
+        addr_constrained_txn::POLICIES::addr_prohibit_policy prohibit_p = new();
 
-        permit.add('h00000000, 'h0000FFFF);
-        permit.add('h10000000, 'h1FFFFFFF);
-        pcy.push_back(permit);
+        permit_p.add('h00000000, 'h0000FFFF);
+        permit_p.add('h10000000, 'h1FFFFFFF);
+        pcy.push_back(permit_p);
 
-        prohibit.add('h13000000, 'h130FFFFF);
-        pcy.push_back(prohibit);
+        prohibit_p.add('h13000000, 'h130FFFFF);
+        pcy.push_back(prohibit_p);
         
-        pcy.push_back(addr_constrained_txn::POLICIES::FIXED_PARITY(1'b1));
+        pcy.push_back(addr_constrained_txn::POLICIES::PARITY_ERR(1'b1));
 
         this.policy = {pcy};
     endfunction

@@ -3,11 +3,11 @@
 
 // Full policy definition
 `define set_policy(POLICY, TYPE, field, RADIX="%0p")                          \
-`SET_POLICY_CLASS(POLICY, TYPE, field, RADIX)                                 \
-`SET_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX)
+`m_set_policy_class(POLICY, TYPE, field, RADIX)                               \
+`m_set_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define SET_POLICY_CLASS(POLICY, TYPE, field, RADIX="%0p")                    \
+`define m_set_policy_class(POLICY, TYPE, field, RADIX="%0p")                  \
     class POLICY``_policy extends base_policy                                 \
         typedef TYPE        l_field_array_t[];                                \
                                                                               \
@@ -84,7 +84,7 @@
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define SET_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                     \
+`define m_set_policy_constructor(POLICY, TYPE, RADIX="%0p")                   \
     typedef TYPE POLICY``_array_t[];                                          \
     static function POLICY``_policy POLICY(                                   \
         POLICY``_array_t values,                                              \

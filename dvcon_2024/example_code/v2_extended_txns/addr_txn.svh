@@ -12,9 +12,13 @@ endclass
 
 class addr_p_txn extends addr_txn;
   rand bit parity;
+  rand bit parity_err;
   rand policy_base#(addr_p_txn) addr_p_policy[$];
 
-  constraint c_parity {parity == $countones(addr) % 2;}
+  constraint c_parity_err {
+    soft (parity_err == 0);
+    (parity_err) ^ ($countones({addr, parity}) == 1);
+  }
 
   function void pre_randomize;
     super.pre_randomize();
@@ -24,23 +28,26 @@ endclass
 
 class addr_constrained_txn extends addr_p_txn;
   function new;
-    addr_permit_policy        permit = new;
-    addr_prohibit_policy      prohibit = new;
-    addr_parity_policy        parity = new;
-    policy_list#(addr_txn)    addr_pcy = new;
-    policy_list#(addr_p_txn)  addr_p_pcy = new;
-
-    permit.add('h00000000, 'h0000FFFF);
-    permit.add('h10000000, 'h1FFFFFFF);
-    addr_pcy.add(permit);
-
-    prohibit.add('h13000000, 'h130FFFFF);
-    addr_pcy.add(prohibit);
+    addr_permit_policy        permit_p = new;
+    addr_prohibit_policy      prohibit_p = new;
     
-    parity.set(1'b1);
-    addr_p_pcy.add(parity);
+    // definition to follow in a later example - sets parity_err to the value provided
+    addr_parity_err_policy    parity_err_p = new;
 
-    this.addr_policy   = {addr_pcy};
-    this.addr_p_policy = {addr_p_pcy};
+    policy_list#(addr_txn)    addr_pcy_lst = new;
+    policy_list#(addr_p_txn)  addr_p_pcy_lst = new;
+
+    permit_p.add('h00000000, 'h0000FFFF);
+    permit_p.add('h10000000, 'h1FFFFFFF);
+    addr_pcy_lst.add(permit_p);
+
+    prohibit_p.add('h13000000, 'h130FFFFF);
+    addr_pcy_lst.add(prohibit_p);
+    
+    parity_err_p.set(1'b1);
+    addr_p_pcy_lst.add(parity_err_p);
+
+    this.addr_policy   = {addr_pcy_lst};
+    this.addr_p_policy = {addr_p_pcy_lst};
   endfunction
 endclass
