@@ -7,15 +7,15 @@ class addr_policy_base extends policy_base#(addr_txn);
   endfunction
 endclass
 
-class addr_parity_policy extends policy_base#(addr_p_txn);
-  bit parity;
+class addr_parity_err_policy extends policy_base#(addr_p_txn);
+  bit parity_err;
   
-  function void set(bit parity);
-    this.parity = parity;
+  function void set(bit parity_err);
+    this.parity_err = parity_err;
   endfunction
   
   constraint c_fixed_value {
-    item.parity == parity;
+    item.parity_err == parity_err;
   }
 endclass
 

@@ -3,11 +3,11 @@
 
 // Full policy definition
 `define fixed_policy(POLICY, TYPE, field, RADIX="%0p")                        \
-`FIXED_POLICY_CLASS(POLICY, TYPE, field, RADIX)                               \
-`FIXED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX)
+`m_fixed_policy_class(POLICY, TYPE, field, RADIX)                             \
+`m_fixed_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define FIXED_POLICY_CLASS(POLICY, TYPE, field, RADIX="%0p")                  \
+`define m_fixed_policy_class(POLICY, TYPE, field, RADIX="%0p")                \
     class POLICY``_policy extends base_policy                                 \
         typedef TYPE        l_field_t;                                        \
                                                                               \
@@ -57,7 +57,7 @@
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define FIXED_POLICY_CONSTRUCTOR(POLICY, TYPE, RADIX="%0p")                   \
+`define m_fixed_policy_constructor(POLICY, TYPE, RADIX="%0p")                 \
     static function POLICY``_policy POLICY(TYPE value, string radix=RADIX);   \
         POLICY = new(value, radix);                                           \
     endfunction: POLICY

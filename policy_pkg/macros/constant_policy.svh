@@ -3,11 +3,11 @@
 
 // Full policy definition
 `define constant_policy(POLICY, TYPE, field, constant)                        \
-`CONST_POLICY_CLASS(POLICY, TYPE, field, constant)                            \
-`CONST_POLICY_CONSTRUCTOR(POLICY)
+`m_const_policy_class(POLICY, TYPE, field, constant)                          \
+`m_const_policy_constructor(POLICY)
 
 // Policy class definition
-`define CONST_POLICY_CLASS(POLICY, TYPE, field, constant)                     \
+`define m_const_policy_class(POLICY, TYPE, field, constant)                   \
     class POLICY``_policy extends base_policy                                 \
         typedef TYPE l_field_t;                                               \
                                                                               \
@@ -32,7 +32,7 @@
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define CONST_POLICY_CONSTRUCTOR(POLICY)                                      \
+`define m_const_policy_constructor(POLICY)                                    \
     static function POLICY``_policy POLICY();                                 \
         POLICY = new();                                                       \
     endfunction: POLICY

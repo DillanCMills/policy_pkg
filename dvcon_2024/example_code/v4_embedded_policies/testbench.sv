@@ -9,5 +9,6 @@ module tb;
     txn.randomize();
     $display("addr=%0h", txn.addr);
     $display("parity=%0h", txn.parity);
+    $display("parity_err=%0h", txn.parity_err);
   end
 endmodule

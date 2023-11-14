@@ -16,11 +16,15 @@ endclass
 
 class addr_p_txn extends addr_txn;
     rand bit parity;
+    rand bit parity_err;
 
-    constraint c_parity {parity == $countones(addr) % 2;}
+    constraint c_parity_err {
+        soft (parity_err == 0);
+        (parity_err) ^ ($countones({addr, parity}) == 1);
+    }
 
     `start_extended_policies(addr_p_txn, addr_txn)
-        `fixed_policy(FIXED_PARITY, bit, parity)
+        `fixed_policy(PARITY_ERR, bit, parity_err)
     `end_policies
 endclass
 
