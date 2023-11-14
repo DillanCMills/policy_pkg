@@ -115,7 +115,7 @@ txn.randomize() with {addr == 32'hdeadbeef;};
 \end{svcode}
 \captionof{figure}{En example of an inline constraint}}
 
-Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of his approach can be found by examining the following code.
+Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of John's approach can be found by examining the following code.
 
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
 
@@ -139,7 +139,7 @@ txn.randomize();
 \end{svcode}
 \captionof{figure}{Randomizing an instance of \code{addr_constrained_txn}}}
 
-Further work on policy-based constraints has been presented since the original DVCon presentation in 2015. Kevin Vasconcellos and Jeff McNeal applied the concept to test configuration and added many nice utilities to the base policy class \cite{b3}. Chuck McClish extended the concept to manage real number values for User Defined Nettypes (UDN) and Unified Power Format (UPF) pins in an analog model \cite{b4}. Additionally, he defined a policy builder class that was used to generically build multiple types of policies while reducing repeated code that was shared between each policy class in the original implementation.
+Further work on policy-based constraints has been presented since the original DVCon presentation in 2015. Kevin Vasconcellos and Jeff McNeal applied the concept to test configuration and added many nice utilities to the base policy class \cite{b3}. Chuck McClish extended the concept to manage real number values for User Defined Nettypes (UDN) and Unified Power Format (UPF) pins in an analog model \cite{b4}. Additionally, Chuck defined a policy builder class that was used to generically build multiple types of policies while reducing repeated code that was shared between each policy class in the original implementation.
 
 Although there has been extensive research on policies, this paper aims to address and provide solutions for three issues that have not been adequately resolved in previous implementations. Furthermore, a fourth problem that arose during testing of the upgraded policy package implementation will also be discussed and resolved.
 
@@ -210,7 +210,6 @@ interface class policy;
 endclass: policy
 \end{svcode}
 \captionof{figure}{The \code{copy} method in the \code{policy} interface class}}
-
 
 Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself with the same configuration. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
 
