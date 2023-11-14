@@ -170,7 +170,7 @@ The second problem is ``where do I define my policy classes?'' This is not a com
 
 \svfile{example_code/v4_embedded_policies/addr_txn.svh}{Address transaction classes with embedded policies}
 
-In the above code, there were few changes from the previous iteration. All the policy classes were migrated into an embedded \code{POLICIES} class, and a static constructor was created for the parity error policy to simplify its creation. The parity \code{POLICIES} class was set as a child of the initial \code{POLICIES} class, which further simplified the usage of the classes in the constraint block. Finally, policies in the constraint block are accessed through the \code{addr_constrained_txn::POLICIES::} accessor.
+In the above code, there were few changes from the previous iteration. All the policy classes were migrated into an embedded \code{POLICIES} class, and a static constructor was created for the parity error policy to simplify its creation. The \code{addr_p_txn::POLICIES} class was set as a child of the \code{addr_txn::POLICIES} class, which further simplified the usage of the classes in the constraint block. Finally, policies in the constraint block are accessed through the \code{addr_constrained_txn::POLICIES::} accessor.
 
 A nice side effect of embedding policy class definitions within their target classes is that policies have access to protected members of the target class.  This enables meta members of the target class (e.g., "knobs" such as \code{parity_err}) to be defined as protected, preventing external classes from manipulating them directly.  In fact, a more advanced use of policies might define all members of a target class as protected, restricting the setting of fields exclusively through policies and reading through accessor functions, thus encouraging maximum encapsulation/loose coupling, which reduces the cost of maintaining and enhancing code and prevents bugs from cascading into classes that use policy-enabled classes.
 
@@ -180,7 +180,7 @@ The third problem is that policies are relatively expensive to define since you 
 
 \svfile{example_code/v5_policy_macros/policy_macros.svh}{Macros for setting up the embedded \code{POLICIES} class and a fixed value policy}
 
-The \code{start_policies}, \code{start_extended_policies}, and \code{end_policies} macros replace the embedded \code{class POLICIES} and \code{endclass} statements within the constrained class. They set up class inheritance as needed and create a local typedef for the \code{policy_imp} parameterized type. The \code{fixed_policy} macro wraps two additional macros responsible for creating the policy class and a static constructor for the class. In this example, a policy class that lets you constrain a property to a fixed value is defined.
+The \code{`start_policies}, \code{`start_extended_policies}, and \code{`end_policies} macros replace the embedded \code{class POLICIES} and \code{endclass} statements within the constrained class. They set up class inheritance as needed and create a local typedef for the \code{policy_imp} parameterized type. This example includes a \code{`fixed_policy} macro, which wraps two additional macros responsible for creating a policy class and a static constructor for the class. This \code{`fixed_policy} example policy class lets you constrain a property to a fixed value.
 
 \svfile{example_code/v5_policy_macros/addr_txn.svh}{Simplified address transaction classes using the policy macros}
 
