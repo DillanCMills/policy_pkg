@@ -6,6 +6,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{minted}
+\renewcommand{\MintedPygmentize}{./pygments-plugin-systemverilog/venv/bin/pygmentize}
 \usepackage[framemethod=TikZ]{mdframed}
 \usepackage[T1]{fontenc}
 \usepackage{inconsolata}
@@ -22,14 +23,14 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
     roundcorner       = 10pt,
     leftmargin        = 40,
     rightmargin       = 40,
-    backgroundcolor   = black!95,
-    middlelinecolor   = gray!50!black,
+    backgroundcolor   = gray!05,
+    middlelinecolor   = gray!30!white,
     innertopmargin    = \topskip,
     innerbottommargin = \topskip,
     splittopskip      = \topskip,
 }
 
-\usemintedstyle{one-dark}
+\usemintedstyle{sv-style-light}
 \captionsetup{hypcap=false, position=top}
 
 \newcommand{\svfile}[2]{{
@@ -38,7 +39,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
     linenos,
     numbersep=16pt,
     breaklines,
-]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{#1}
+]{sv-lang}{#1}
 \end{mdframed}
 \ifthenelse{\equal{#2}{}}{}{\captionof{figure}{#2}}
 }}
@@ -52,7 +53,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
     firstline=#2,
     lastline=#3,
     firstnumber=1,
-]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{#1}
+]{sv-lang}{#1}
 \end{mdframed}
 \ifthenelse{\equal{#4}{}}{}{\captionof{figure}{#4}}
 }}
@@ -61,7 +62,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \textbf{\mintinline{text}{#1}}
 }
 
-\newminted[svcode]{CustomSystemVerilogLexer.py:CustomSystemVerilogLexer -x}{
+\newminted[svcode]{sv-lang}{
     linenos,
     numbersep=16pt,
     breaklines,
@@ -123,11 +124,9 @@ Policy classes are a technique for SystemVerilog constraint layering with compar
 
 These first two classes provide the base class types for the actual policies. This allows different, related policies to be grouped together in \code{policy_list} and applied to the randomization call concurrently. Both of these classes are parameterized to a specific object type, so separate instances will be required for each class type that needs to be constrained.
 
-
 \svfile{example_code/v1_original_policies/addr_policies.svh}{Policies for constraining the \code{addr_txn} class}
 
 The next three classes contain implementations of the \code{policy_base} class for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
-
 
 \svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class and a constrained subclass}
 
