@@ -98,23 +98,29 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \section{Constraints and Policy Class Review}
 
-When working with randomized objects in SystemVerilog, it is typically desirable to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constraint check. Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. 
+Random objects and constraints are the foundational building blocks of constrained random verification in SystemVerilog. The simplest implementations embed fixed constraints within a class definition.  Embedded constraints lack flexibility; all randomized object instances must meet these requirements exactly as they are written.
 
-Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of Dickol's approach can be found by examining the following code.
+In-line constraints using the \code{with} construct offer marginally better flexibility.  Although these external constraints allow greater variability of random objects, their definitions are still fixed within the calling context.  Furthermore, all in-line constraints must be speficied within a single call to \code{randomize()}.
+
+Policy classes are a technique for applying SystemVerilog constraints in a portable, reuasable, and incremental manner, originally described by John Dickol \cite{b1}\cite{b2}. The operating mechanism leverages an aspect of "global constraints," the simultaneous solving of constraints across a set of random objects.  Randomizing an object that contains policies also randomizes the policies.  Meanwhile, the policies contain a reference back to the container.  Consequently, the policy container is constrained by the policies it contains.  Dickol's approach is illustrated by the following code.
+
+The first two classes provide the core definitions for policies. The \code{policy_base} implements the hook back to the policy container, and the \code{policy_list} enables related policies to be organized into groups. Both of these classes are parameterized by a container object type, so a unique specialization will be required for each policy container class that needs to be constrained.
 
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
 
-These first two classes provide the base class types for the actual policies. This allows different, related policies to be grouped together in \code{policy_list} and applied to the randomization call concurrently. Both of these classes are parameterized to a specific object type, so separate instances will be required for each class type that needs to be constrained.
+Next, \code{addr_txn} is an example policy container--a generic transaction with a random address and size that implements policies.
+
+\svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class}
+
+The next three classes implement some policies for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
 
 \svfile{example_code/v1_original_policies/addr_policies.svh}{Policies for constraining the \code{addr_txn} class}
 
-The next three classes contain implementations of the \code{policy_base} class for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
+The final class shows how policies might be used. The \code{addr_constrained_txn} extends \code{addr_txn} and defines two policies, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
 
 \svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class and a constrained subclass}
 
-The final two classes show how these policies are used. The \code{addr_txn} class creates a \code{policy} queue, and during the \code{pre_randomize} function sets the handle to the \code{item} object within each policy to itself. The \code{addr_constrained_txn} subclass adds two policies to a local \code{pcy} list, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
-
-At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the policies provided.
+At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the embedded policies.
 
 {\begin{svcode}
 addr_constrained_txn txn = new();
