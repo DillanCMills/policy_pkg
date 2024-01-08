@@ -1,27 +1,20 @@
 class addr_txn extends uvm_object;
-    rand bit [31:0]   addr;
-    rand int          size;
     rand policy_queue policy;
-
-    constraint c_size {size inside {1, 2, 4};}
-
-    function void pre_randomize;
-        foreach(policy[i]) policy[i].set_item(this);
-    endfunction
+    // policy is replaced with the above. All other members, constraints, 
+    // and pre_randomize are unchanged from the previous example
 endclass
 
 class addr_p_txn extends addr_txn;
     rand bit parity;
     rand bit parity_err;
-
-    constraint c_parity_err {
-        soft (parity_err == 0);
-        (parity_err) ^ ($countones({addr, parity}) == 1);
-    }
+    constraint c_parity_err {/*...*/}
+    // The local addr_p_policy and pre_randomize are removed. Everything
+    // else is unchanged from the previous example
 endclass
 
 class addr_constrained_txn extends addr_p_txn;
     function new;
+        // only a single policy queue is necessary now
         policy_queue pcy;
 
         addr_permit_policy     permit_p   = new();
