@@ -8,9 +8,7 @@ interface class policy_container;
 
     // Assignments
     pure virtual function void set_policies(policy_queue policies);
-
     pure virtual function void add_policies(policy_queue policies);
-
     pure virtual function void clear_policies();
 
     // Access
