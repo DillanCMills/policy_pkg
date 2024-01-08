@@ -1,6 +1,3 @@
-`ifndef __POLICY_PKG__
-`define __POLICY_PKG__
-
 `include "uvm_macros.svh"
 
 package policy_pkg;
@@ -17,5 +14,3 @@ package policy_pkg;
     `include "policy_object.svh"
 
 endpackage: policy_pkg
-
-`endif

@@ -1,6 +1,3 @@
-`ifndef __MEMBER_POLICY__
-`define __MEMBER_POLICY__
-
 // Full policy definition
 `define member_policy(POLICY, FIELD, TYPE, RADIX="%0p")                       \
 `m_member_policy_class(POLICY, FIELD, TYPE, RADIX)                            \
@@ -93,5 +90,3 @@
     );                                                                        \
         POLICY = new(values, exclude, radix);                                 \
     endfunction: POLICY
-
-`endif

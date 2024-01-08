@@ -1,6 +1,3 @@
-`ifndef __CONSTANT_POLICY__
-`define __CONSTANT_POLICY__
-
 // Full policy definition
 `define constant_policy(POLICY, FIELD, TYPE, CONST)                           \
 `m_const_policy_class(POLICY, FIELD, TYPE, CONST)                             \
@@ -35,5 +32,3 @@
     static function POLICY``_policy POLICY();                                 \
         POLICY = new();                                                       \
     endfunction: POLICY
-
-`endif 

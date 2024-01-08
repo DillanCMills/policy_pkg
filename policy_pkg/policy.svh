@@ -1,6 +1,3 @@
-`ifndef __POLICY__
-`define __POLICY__
-
 interface class policy;
 
     pure virtual function string name();
@@ -11,5 +8,3 @@ interface class policy;
     pure virtual function policy copy();
 
 endclass: policy
-
-`endif

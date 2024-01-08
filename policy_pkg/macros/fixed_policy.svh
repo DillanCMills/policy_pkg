@@ -1,6 +1,3 @@
-`ifndef __FIXED_POLICY__
-`define __FIXED_POLICY__
-
 // Full policy definition
 `define fixed_policy(POLICY, FIELD, TYPE, RADIX="%0p")                        \
 `m_fixed_policy_class(POLICY, FIELD, TYPE, RADIX)                             \
@@ -59,5 +56,3 @@
     static function POLICY``_policy POLICY(TYPE value, string radix=RADIX);   \
         POLICY = new(value, radix);                                           \
     endfunction: POLICY
-
-`endif 

@@ -1,6 +1,3 @@
-`ifndef __POLICY_CONTAINER__
-`define __POLICY_CONTAINER__
-
 interface class policy_container;
 
     // Queries
@@ -18,5 +15,3 @@ interface class policy_container;
     pure virtual function policy_queue copy_policies();
 
 endclass: policy_container
-
-`endif

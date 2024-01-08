@@ -1,6 +1,3 @@
-`ifndef __POLICE_OBJECT__
-`define __POLICE_OBJECT__
-
 class policy_object #(type BASE=uvm_object) extends BASE implements policy_container;
 
     protected policy_queue m_policies;
@@ -53,5 +50,3 @@ class policy_object #(type BASE=uvm_object) extends BASE implements policy_conta
         end
     endfunction: try_add_policy
 endclass: policy_object
-
-`endif

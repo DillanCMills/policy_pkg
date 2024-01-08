@@ -1,6 +1,3 @@
-`ifndef __POLICY_IMP__
-`define __POLICY_IMP__
-
 virtual class policy_imp #(type ITEM=uvm_object) implements policy;
 
     protected rand ITEM m_item;
@@ -48,5 +45,3 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
     endfunction: set_item
 
 endclass: policy_imp
-
-`endif

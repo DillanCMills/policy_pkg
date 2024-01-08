@@ -1,6 +1,3 @@
-`ifndef __RANGE_POLICY__
-`define __RANGE_POLICY__
-
 // Full policy definition
 `define range_policy(POLICY, FIELD, TYPE, RADIX="%0p")                        \
 `m_range_policy_class(POLICY, FIELD, TYPE, RADIX)                             \
@@ -96,5 +93,3 @@
     );                                                                        \
         POLICY = new(low, high, exclude, radix);                              \
     endfunction: POLICY
-
-`endif
