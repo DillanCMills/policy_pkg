@@ -1,34 +1,34 @@
-`ifndef __RANGED_POLICY__
-`define __RANGED_POLICY__
+`ifndef __RANGE_POLICY__
+`define __RANGE_POLICY__
 
 // Full policy definition
-`define ranged_policy(POLICY, TYPE, field, RADIX="%0p")                       \
-`m_ranged_policy_class(POLICY, TYPE, field, RADIX)                            \
-`m_ranged_policy_constructor(POLICY, TYPE, RADIX)
+`define range_policy(POLICY, FIELD, TYPE, RADIX="%0p")                        \
+`m_range_policy_class(POLICY, FIELD, TYPE, RADIX)                             \
+`m_range_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define m_ranged_policy_class(POLICY, TYPE, field, RADIX="%0p")               \
+`define m_range_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")                \
     class POLICY``_policy extends base_policy                                 \
-        typedef TYPE        l_field_t;                                        \
+        local TYPE          l_low;                                            \
+        local TYPE          l_high;                                           \
+        local bit           l_exclude;                                        \
+        local string        l_radix=RADIX;                                    \
                                                                               \
-        protected TYPE      m_low;                                            \
-        protected TYPE      m_high;                                           \
-        protected bit       m_inside;                                         \
-        protected string    m_radix=RADIX;                                    \
-                                                                              \
-        constrant c_ranged_value {                                            \
-            (item != null) ->                                                 \
-                ((!m_inside) ^ (item >= m_low && item <= m_high));            \
+        constrant c_policy_constraint {                                       \
+            (m_item != null) -> (                                             \
+                (l_exclude) ^                                                 \
+                ((m_item.FIELD >= l_low && m_item.FIELD <= l_high))           \
+            );                                                                \
         }                                                                     \
                                                                               \
         function new(                                                         \
             TYPE   low,                                                       \
             TYPE   high=low,                                                  \
-            bit    inside=1'b1,                                               \
+            bit    exclude=1'b0,                                              \
             string radix=RADIX                                                \
         );                                                                    \
             this.set_range(low, high);                                        \
-            this.set_inside(inside);                                          \
+            this.set_exclude(exclude);                                        \
             this.set_radix(radix);                                            \
         endfunction: new                                                      \
                                                                               \
@@ -38,63 +38,63 @@
                                                                               \
         virtual function string description();                                \
             return ({                                                         \
-                `"(field ",                                                   \
-                m_inside ? "inside [" : "outside [",                          \
-                $sformatf(m_radix, m_low),                                    \
+                `"(FIELD ",                                                   \
+                l_exclude ? "outside [" : "inside [",                         \
+                $sformatf(l_radix, l_low),                                    \
                 ", ",                                                         \
-                $sformatf(m_radix, m_high),                                   \
+                $sformatf(l_radix, l_high),                                   \
                 `"])`"                                                        \
             });                                                               \
         endfunction: description                                              \
                                                                               \
         virtual function policy copy();                                       \
-            copy = new(m_low, m_high, m_inside, m_radix);                     \
+            copy = new(l_low, l_high, l_exclude, l_radix);                    \
         endfunction: copy                                                     \
                                                                               \
         virtual function void set_range(TYPE low, TYPE high);                 \
             if (low <= high) begin                                            \
-                this.m_low = low;                                             \
-                this.m_high = high;                                           \
+                this.l_low = low;                                             \
+                this.l_high = high;                                           \
             end else begin                                                    \
-                this.m_low = high;                                            \
-                this.m_high = low;                                            \
+                this.l_low = high;                                            \
+                this.l_high = low;                                            \
             end                                                               \
         endfunction: set_range                                                \
                                                                               \
         virtual function TYPE get_low();                                      \
-            return (this.m_low);                                              \
+            return (this.l_low);                                              \
         endfunction: get_low                                                  \
                                                                               \
         virtual function TYPE get_high();                                     \
-            return (this.m_high);                                             \
+            return (this.l_high);                                             \
         endfunction: get_high                                                 \
                                                                               \
-        virtual function void set_inside(bit inside);                         \
-            this.m_inside = inside;                                           \
-        endfunction: set_inside                                               \
+        virtual function void set_exclude(bit exclude);                       \
+            this.l_exclude = exclude;                                         \
+        endfunction: set_exclude                                              \
                                                                               \
-        virtual function bit get_inside();                                    \
-            return (this.m_inside);                                           \
-        endfunction: get_inside                                               \
+        virtual function bit get_exclude();                                   \
+            return (this.l_exclude);                                          \
+        endfunction: get_exclude                                              \
                                                                               \
         virtual function void set_radix(string radix);                        \
-            this.m_radix = radix;                                             \
+            this.l_radix = radix;                                             \
         endfunction: set_radix                                                \
                                                                               \
         virtual function string get_radix();                                  \
-            return (this.m_radix);                                            \
+            return (this.l_radix);                                            \
         endfunction: get_radix                                                \
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define m_ranged_policy_constructor(POLICY, TYPE, RADIX="%0p")                \
+`define m_range_policy_constructor(POLICY, TYPE, RADIX="%0p")                 \
     static function POLICY``_policy POLICY(                                   \
         TYPE   low,                                                           \
         TYPE   high=low,                                                      \
-        bit    inside=1'b1,                                                   \
+        bit    exclude=1'b0,                                                  \
         string radix=RADIX                                                    \
     );                                                                        \
-        POLICY = new(low, high, inside, radix);                               \
+        POLICY = new(low, high, exclude, radix);                              \
     endfunction: POLICY
 
 `endif

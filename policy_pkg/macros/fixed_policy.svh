@@ -2,20 +2,18 @@
 `define __FIXED_POLICY__
 
 // Full policy definition
-`define fixed_policy(POLICY, TYPE, field, RADIX="%0p")                        \
-`m_fixed_policy_class(POLICY, TYPE, field, RADIX)                             \
+`define fixed_policy(POLICY, FIELD, TYPE, RADIX="%0p")                        \
+`m_fixed_policy_class(POLICY, FIELD, TYPE, RADIX)                             \
 `m_fixed_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define m_fixed_policy_class(POLICY, TYPE, field, RADIX="%0p")                \
+`define m_fixed_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")                \
     class POLICY``_policy extends base_policy                                 \
-        typedef TYPE        l_field_t;                                        \
+        local TYPE          l_val;                                            \
+        local string        l_radix=RADIX;                                    \
                                                                               \
-        protected TYPE      m_fixed_value;                                    \
-        protected string    m_radix=RADIX;                                    \
-                                                                              \
-        constraint c_fixed_value {                                            \
-            (item != null) -> (item.field == l_field_t'(m_fixed_value));      \
+        constraint c_policy_constraint {                                      \
+            (m_item != null) -> (m_item.FIELD == TYPE'(l_val));               \
         }                                                                     \
                                                                               \
         function new(TYPE value, string radix=RADIX);                         \
@@ -29,30 +27,30 @@
                                                                               \
         virtual function string description();                                \
             return ({                                                         \
-                `"(field==",                                                  \
-                $sformatf(m_radix, m_fixed_value),                            \
+                `"(FIELD==",                                                  \
+                $sformatf(l_radix, l_val),                                    \
                 `")`"                                                         \
             });                                                               \
         endfunction: description                                              \
                                                                               \
         virtual function policy copy();                                       \
-            copy = new(m_fixed_value, m_radix);                               \
+            copy = new(l_val, l_radix);                                       \
         endfunction: copy                                                     \
                                                                               \
         virtual function void set_value(TYPE value);                          \
-            this.m_fixed_value = value;                                       \
+            this.l_val = value;                                               \
         endfunction: set_value                                                \
                                                                               \
         virtual function TYPE get_value();                                    \
-            return (this.m_fixed_value);                                      \
+            return (this.l_val);                                              \
         endfunction: get_value                                                \
                                                                               \
         virtual function void set_radix(string radix);                        \
-            this.m_radix = radix;                                             \
+            this.l_radix = radix;                                             \
         endfunction: set_radix                                                \
                                                                               \
         virtual function string get_radix();                                  \
-            return (this.m_radix);                                            \
+            return (this.l_radix);                                            \
         endfunction: get_radix                                                \
     endclass: POLICY``_policy
 

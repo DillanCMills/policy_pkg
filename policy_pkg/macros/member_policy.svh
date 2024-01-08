@@ -1,32 +1,32 @@
-`ifndef __SET_POLICY__
-`define __SET_POLICY__
+`ifndef __MEMBER_POLICY__
+`define __MEMBER_POLICY__
 
 // Full policy definition
-`define set_policy(POLICY, TYPE, field, RADIX="%0p")                          \
-`m_set_policy_class(POLICY, TYPE, field, RADIX)                               \
-`m_set_policy_constructor(POLICY, TYPE, RADIX)
+`define member_policy(POLICY, FIELD, TYPE, RADIX="%0p")                       \
+`m_member_policy_class(POLICY, FIELD, TYPE, RADIX)                            \
+`m_member_policy_constructor(POLICY, TYPE, RADIX)
 
 // Policy class definition
-`define m_set_policy_class(POLICY, TYPE, field, RADIX="%0p")                  \
+`define m_member_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")               \
     class POLICY``_policy extends base_policy                                 \
-        typedef TYPE        l_field_array_t[];                                \
+        typedef TYPE            l_field_array_t[];                            \
                                                                               \
-        protected l_field_array_t   m_values;                                 \
-        protected bit               m_inside;                                 \
-        protected string            m_radix=RADIX;                            \
+        local l_field_array_t   m_values;                                     \
+        local bit               l_exclude;                                    \
+        local string            m_radix=RADIX;                                \
                                                                               \
-        constrant c_set_value {                                               \
-            (item != null) ->                                                 \
-                ((m_inside) ^ (item.field inside {m_values}));                \
+        constrant c_policy_constraint {                                       \
+            (m_item != null) ->                                               \
+                ((l_exclude) ^ (m_item.FIELD inside {m_values}));             \
         }                                                                     \
                                                                               \
         function new(                                                         \
             l_field_array_t values,                                           \
-            bit             inside=1'b1,                                      \
+            bit             exclude=1'b0,                                     \
             string          radix=RADIX                                       \
         );                                                                    \
             this.set_values(values);                                          \
-            this.set_inside(inside);                                          \
+            this.set_exclude(exclude);                                        \
             this.set_radix(radix);                                            \
         endfunction: new                                                      \
                                                                               \
@@ -44,15 +44,15 @@
                     i == m_values.size()-1 ? "" : ", "};                      \
                                                                               \
             return ({                                                         \
-                `"POLICY(field ",                                             \
-                m_inside ? "inside {" : "outside {",                          \
+                `"POLICY(FIELD ",                                             \
+                l_exclude ? "outside {" : "inside {",                         \
                 values_str,                                                   \
                 `"})`"                                                        \
             });                                                               \
         endfunction: description                                              \
                                                                               \
         virtual function policy copy();                                       \
-            copy = new(m_values, m_inside, m_radix);                          \
+            copy = new(m_values, l_exclude, m_radix);                         \
         endfunction: copy                                                     \
                                                                               \
         virtual function void set_values(l_field_array_t values);             \
@@ -66,13 +66,13 @@
             return (l_array);                                                 \
         endfunction: get_values                                               \
                                                                               \
-        virtual function void set_inside(bit inside);                         \
-            this.m_inside = inside;                                           \
-        endfunction: set_inside                                               \
+        virtual function void set_exclude(bit exclude);                       \
+            this.l_exclude = exclude;                                         \
+        endfunction: set_exclude                                              \
                                                                               \
-        virtual function bit get_inside();                                    \
-            return (this.m_inside);                                           \
-        endfunction: get_inside                                               \
+        virtual function bit get_exclude();                                   \
+            return (this.l_exclude);                                          \
+        endfunction: get_exclude                                              \
                                                                               \
         virtual function void set_radix(string radix);                        \
             this.m_radix = radix;                                             \
@@ -84,14 +84,14 @@
     endclass: POLICY``_policy
 
 // Policy constructor definition
-`define m_set_policy_constructor(POLICY, TYPE, RADIX="%0p")                   \
+`define m_member_policy_constructor(POLICY, TYPE, RADIX="%0p")                \
     typedef TYPE POLICY``_array_t[];                                          \
     static function POLICY``_policy POLICY(                                   \
         POLICY``_array_t values,                                              \
-        bit              inside=1'b1,                                         \
+        bit              exclude=1'b0,                                        \
         string           radix=RADIX                                          \
     );                                                                        \
-        POLICY = new(values, inside, radix);                                  \
+        POLICY = new(values, exclude, radix);                                 \
     endfunction: POLICY
 
 `endif

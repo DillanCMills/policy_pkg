@@ -26,7 +26,7 @@ endclass: POLICIES
 
 `include "constant_policy.svh"
 `include "fixed_policy.svh"
-`include "ranged_policy.svh"
-`include "set_policy.svh"
+`include "member_policy.svh"
+`include "range_policy.svh"
 
 `endif
