@@ -11,9 +11,9 @@ package policy_pkg;
     
     typedef policy policy_queue[$];
     
-    `include "policy_container.svh"
-    
     `include "policy_imp.svh"
+    
+    `include "policy_container.svh"
     `include "policy_object.svh"
 
 endpackage: policy_pkg
