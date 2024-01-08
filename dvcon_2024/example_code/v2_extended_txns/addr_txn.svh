@@ -1,13 +1,5 @@
 class addr_txn;
-  rand bit [31:0] addr;
-  rand int        size;
-  rand policy_base#(addr_txn) addr_policy[$];
-
-  constraint c_size {size inside {1, 2, 4};}
-
-  function void pre_randomize;
-    foreach(addr_policy[i]) addr_policy[i].set_item(this);
-  endfunction
+  // ... unchanged from previous example
 endclass
 
 class addr_p_txn extends addr_txn;
