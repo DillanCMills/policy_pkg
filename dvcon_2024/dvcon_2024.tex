@@ -98,25 +98,7 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \section{Constraints and Policy Class Review}
 
-When working with randomized objects in SystemVerilog, it is typically desirable to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constaint check. For example, the following \code{addr_txn} class contains a constraint on the \code{size} property to ensure the address is always word aligned.
-
-{\begin{svcode}
-class addr_txn;
-    rand bit [31:0] addr;
-    rand int        size;
-
-    constraint c_size {size inside {1, 2, 4};}
-endclass
-\end{svcode}
-\captionof{figure}{A basic address transaction class}}
-
-Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. For example, the same \code{addr_txn} class can have an instance of it randomized with the following constraint on its \code{addr} property.
-
-{\begin{svcode}
-addr_txn txn = new();
-txn.randomize() with {addr == 32'hdeadbeef;};
-\end{svcode}
-\captionof{figure}{En example of an inline constraint}}
+When working with randomized objects in SystemVerilog, it is typically desirable to control the randomization of the item being randomized. The common method of doing so is by using constrained random value generation. Constraints for the randomization of class properties can be provided within the class definition, which will require randomized properties to always pass the specified constraint check. Constraints can also be provided outside the class definition at the point of randomization by using the \code{with} construct. This allows variation to the constraints based on the context of the randomization. 
 
 Policy classes are a technique for SystemVerilog constraint layering with comparable performance to traditional constraint methods, while additionally providing portable and reusable constraints that can be mixed and matched into the object being randomized, originally presented by John Dickol \cite{b1}\cite{b2}. This is possible through SystemVerilog ``Global Constraints'', which randomizes all lower-level objects whenever a top-level object is randomized, and solves all rand variables and constraints across the entire object hierarchy simultaneously. A summary of Dickol's approach can be found by examining the following code.
 
