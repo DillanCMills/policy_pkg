@@ -108,7 +108,7 @@ The first two classes provide the core definitions for policies. The \code{polic
 
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
 
-Next, \code{addr_txn} is an example policy container--a generic transaction with a random address and size that implements policies.
+Next, \code{addr_txn} is an example policy container---a generic transaction with a random address and size that implements policies.
 
 \svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class}
 
@@ -116,9 +116,9 @@ The next three classes implement some policies for the \code{addr_txn} class. A 
 
 \svfile{example_code/v1_original_policies/addr_policies.svh}{Policies for constraining the \code{addr_txn} class}
 
-The final class shows how policies might be used. The \code{addr_constrained_txn} extends \code{addr_txn} and defines two policies, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class can then passes the local \code{pcy} list to the parent \code{policy} queue.
+The final class shows how policies might be used. The \code{addr_constrained_txn} class extends \code{addr_txn} and defines two policies, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class then passes the local \code{pcy} list to the parent \code{policy} queue.
 
-\svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class and a constrained subclass}
+\svfile{example_code/v1_original_policies/addr_constrained_txn.svh}{The \code{addr_constrained_txn} subclass}
 
 At this point, an instance of \code{addr_constrained_txn} can be created and randomized like normal, and the address will be constrained based on the embedded policies.
 
