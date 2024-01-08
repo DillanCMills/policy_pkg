@@ -104,9 +104,9 @@ In-line constraints using the \code{with} construct offer marginally better flex
 
 Policy classes are a technique for applying SystemVerilog constraints in a portable, reuasable, and incremental manner, originally described by John Dickol \cite{b1}\cite{b2}. The operating mechanism leverages an aspect of "global constraints," the simultaneous solving of constraints across a set of random objects.  Randomizing an object that contains policies also randomizes the policies.  Meanwhile, the policies contain a reference back to the container.  Consequently, the policy container is constrained by the policies it contains.  Dickol's approach is illustrated by the following code.
 
-The first two classes provide the core definitions for policies. The \code{policy_base} implements the hook back to the policy container, and the \code{policy_list} enables related policies to be organized into groups. Both of these classes are parameterized by a container object type, so a unique specialization will be required for each policy container class that needs to be constrained.
-
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
+
+The first two classes provide the core definitions for policies. The \code{policy_base} implements the hook back to the policy container, and the \code{policy_list} enables related policies to be organized into groups. Both of these classes are parameterized by a container object type, so a unique specialization will be required for each policy container class that needs to be constrained.
 
 Next, \code{addr_txn} is an example policy container---a generic transaction with a random address and size that implements policies.
 
