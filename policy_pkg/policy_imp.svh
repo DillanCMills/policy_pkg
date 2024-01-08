@@ -16,8 +16,7 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
     virtual function bit item_is_compatible(uvm_object item);
         ITEM local_item;
 
-        if (item == null) return( 0 );
-        else return( $cast(local_item, item) );
+        return( (item != null) && ($cast(local_item, item)) );
     endfunction: item_is_compatible
 
     virtual function void set_item(uvm_object item);
@@ -39,8 +38,8 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
             `uvm_warning(
                 "policy::set_item()",
                 $sformatf(
-                    "Item <%s> type <%s> is not compatible with policy <%s> type <%s>",
-                    item.get_name(), item.get_type_name(), this.name(), this.type_name()
+                    "Cannot apply policy '%0s' of type '%0s' to target object '%0s' of incompatible type '%0s'",
+                    this.name(), ITEM::type_name(), item.get_name(), item.get_type_name()
                 )
             )
             this.m_item = null;
