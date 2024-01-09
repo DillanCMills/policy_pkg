@@ -106,15 +106,14 @@ Policy classes are a technique for applying SystemVerilog constraints in a porta
 
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
 
-The first two classes provide the core definitions for policies. The \code{policy_base} implements the hook back to the policy container, and the \code{policy_list} enables related policies to be organized into groups. Both of these classes are parameterized by a container object type, so a unique specialization will be required for each policy container class that needs to be constrained.
-
-Next, \code{addr_txn} is an example policy container---a generic transaction with a random address and size that implements policies.
+These two base classes provide the core definitions for policies: \code{policy_base} implements the hook back to the policy container, and \code{policy_list} enables related policies to be organized into groups. Both classes are parameterized by a container object type, so a unique specialization will be required for each policy-enabled container.  Policy containers like transactions, sequences, and configuration objects implement these classes to support flexible random steering.  Below are examples of a generic transaction, \code{addr_txn}, with a random address and size and some policies to constrain those attributes.
 
 \svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class}
 
+\svfile{example_code/v1_original_policies/addr_policies.svh}{Policies for constraining the \code{addr_txn} class}
+
 The next three classes implement some policies for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
 
-\svfile{example_code/v1_original_policies/addr_policies.svh}{Policies for constraining the \code{addr_txn} class}
 
 The final class shows how policies might be used. The \code{addr_constrained_txn} class extends \code{addr_txn} and defines two policies, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class then passes the local \code{pcy} list to the parent \code{policy} queue.
 
