@@ -11,7 +11,7 @@ class addr_permit_policy extends addr_policy_base;
     rand int selection;
 
     constraint c_addr_permit {
-      selection inside {[0:ranges.size()-1]};
+        selection inside {[0:ranges.size()-1]};
 
         foreach(ranges[i]) {
             if(selection == i) {
