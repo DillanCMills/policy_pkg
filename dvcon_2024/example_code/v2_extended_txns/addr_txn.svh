@@ -23,7 +23,7 @@ class addr_constrained_txn extends addr_p_txn;
     addr_permit_policy        permit_p = new;
     addr_prohibit_policy      prohibit_p = new;
     
-    // definition to follow in a later example - sets parity_err to the value provided
+    // definition to follow in a later example - constrains parity_err bit
     addr_parity_err_policy    parity_err_p = new;
 
     policy_list#(addr_txn)    addr_pcy_lst = new;

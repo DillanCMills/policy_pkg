@@ -7,7 +7,7 @@ class addr_parity_err_policy extends policy_imp#(addr_p_txn);
 
    constraint c_fixed_value {m_item != null -> m_item.parity_err == parity_err;}
 
-   function new(int parity_err);
+   function new(bit parity_err);
       this.parity_err = parity_err;
    endfunction
 endclass
