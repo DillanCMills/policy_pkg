@@ -10,7 +10,7 @@ class addr_p_txn extends addr_txn;
     // class members and constraints unchanged from previous example
 
     `start_extended_policies(addr_p_txn, addr_txn)
-        `fixed_policy(PARITY_ERR, bit, parity_err)
+        `fixed_policy(PARITY_ERR, parity_err, bit)
     `end_policies
 endclass
 

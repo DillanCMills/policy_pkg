@@ -100,9 +100,9 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 Random objects and constraints are the foundational building blocks of constrained random verification in SystemVerilog. The simplest implementations embed fixed constraints within a class definition.  Embedded constraints lack flexibility; all randomized object instances must meet these requirements exactly as they are written.
 
-In-line constraints using the \code{with} construct offer marginally better flexibility.  Although these external constraints allow greater variability of random objects, their definitions are still fixed within the calling context.  Furthermore, all in-line constraints must be speficied within a single call to \code{randomize()}.
+In-line constraints using the \code{with} construct offer marginally better flexibility.  Although these external constraints allow greater variability of random objects, their definitions are still fixed within the calling context.  Furthermore, all in-line constraints must be specified within a single call to \code{randomize()}.
 
-Policy classes are a technique for applying SystemVerilog constraints in a portable, reuasable, and incremental manner, originally described by John Dickol \cite{b1}\cite{b2}. The operating mechanism leverages an aspect of "global constraints," the simultaneous solving of constraints across a set of random objects.  Randomizing an object that contains policies also randomizes the policies.  Meanwhile, the policies contain a reference back to the container.  Consequently, the policy container is constrained by the policies it contains.  Dickol's approach is illustrated by the following code.
+Policy classes are a technique for applying SystemVerilog constraints in a portable, reusable, and incremental manner, originally described by John Dickol \cite{b1}\cite{b2}. The operating mechanism leverages an aspect of "global constraints," the simultaneous solving of constraints across a set of random objects.  Randomizing an object that contains policies also randomizes the policies.  Meanwhile, the policies contain a reference back to the container.  Consequently, the policy container is constrained by the policies it contains.  Dickol's approach is illustrated by the following code.
 
 \svfile{example_code/v1_original_policies/policy_base.svh}{The \code{policy_base} and \code{policy_list} classes}
 
@@ -150,7 +150,7 @@ A non-parameterized base enables all policies targeting a particular class hiera
 
 One consequence of eliminating the parameter from our base type is that the policy-enabled container object, \code{item}, and its assignment function, \code{set_item()}, are no longer strongly typed.  Here we make a small concession, using \code{uvm_object} as our default policy-enabled type.  This means that all classes that implement our policies must derive from \code{uvm_object}, and we need to use dynamic casting to ensure that policies and their containers are type-compatible.  In the example above, \code{item} is set to \code{null} and randomization is disabled when the cast fails, preventing runtime problems in the event that incompatible policies are applied.
 
-Not much changes when it comes to defining policies; the address policies now extend \code{policy_imp} instead of \code{policy_base}, and the underlying constraints are written as implications so that they will not apply when \code{item} is missing.
+Not much changes when it comes to defining policies; the address policies now extend \code{policy_imp} instead of \linebreak\code{policy_base}, and the underlying constraints are written as implications so that they will not apply when \code{item} is missing.
 
 \svfile{example_code/v3_extended_policies/addr_policies.svh}{Address policies updated to use the new policy implementation}
 
@@ -167,9 +167,9 @@ To further optimize the organization of potentially large families of policies, 
 
 \svfile{example_code/v4_embedded_policies/addr_txn.svh}{Address transaction classes with embedded policies}
 
-We can also define static constructor functions within \code{POLICIES} wrappers.  This practice further reduces the cost of using policies since we can instantiate and initialize them with a single call, as demonstrated with the call to \code{addr_constrained_txn::POLICIES::PARITY_ERR()}.  Note that although the \code{PARITY_ERR} constructor is defined in \code{addr_p_txn::POLICIES} it is accessible through \code{addr_constrained_txn::POLICIES} because of the wrapper class inheritance.  The \code{POLICIES::} scoping layer even helps to make code more readable and easy to understand.
+This example also shows how we can define static constructor functions within \code{POLICIES} wrappers. This practice further reduces the cost of using policies since we can instantiate and initialize them with a single call, as demonstrated with the call to \linebreak\code{addr_constrained_txn::POLICIES::PARITY_ERR()}. Note that although the \code{PARITY_ERR} constructor is defined in \linebreak\code{addr_p_txn::POLICIES}, it is accessible through \code{addr_constrained_txn::POLICIES} because of the wrapper class inheritance. The \code{POLICIES::} scoping layer even helps to make code more readable and easy to understand.
 
-What's more, the \code{parity_err} property has now been defined as \code{protected}, preventing anything but our PARITY_ERR policy from manipulating that "knob."  In fact, a more advanced use of policies might define all members of a target class as protected, restricting the setting of fields exclusively through policies and reading through accessor functions, thus encouraging maximum encapsulation/loose coupling, which reduces the cost of maintaining and enhancing code and prevents bugs from cascading into classes that use policy-enabled classes.
+What's more, the \code{parity_err} property has now been defined as \code{protected}, preventing anything but our \code{PARITY_ERR} policy from manipulating that "knob."  In fact, a more advanced use of policies might define all members of a target class as protected, restricting the setting of fields exclusively through policies and reading through accessor functions, thus encouraging maximum encapsulation/loose coupling, which reduces the cost of maintaining and enhancing code and prevents bugs from cascading into classes that use policy-enabled classes.
 
 \section{Problem \#3: Boilerplate Overload}
 
@@ -194,7 +194,7 @@ static function addr_parity_err_policy PARITY_ERR(bit value);
     PARITY_ERR = new(value);
 endfunction
 ...
-pcy.push_back(addr_constrained_txn::POLICIES::PARITY_ERR(1'b1));
+this.policies.push_back(addr_constrained_txn::POLICIES::PARITY_ERR(1'b1));
 \end{svcode}
 \captionof{figure}{Example static constructor function from the \code{PARITY_ERR} policy class}}
 

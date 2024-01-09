@@ -41,7 +41,5 @@ class addr_constrained_txn extends addr_p_txn;
         this.policies.push_back(
             addr_constrained_txn::POLICIES::PARITY_ERR(1'b1)
         );
-
-        this.policy = {pcy};
     endfunction
 endclass
