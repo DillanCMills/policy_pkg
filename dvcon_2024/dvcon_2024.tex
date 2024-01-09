@@ -220,7 +220,7 @@ The examples presented so far are functional, but are lacking many features that
 
 The following \code{policy} interface class adds additional methods for managing a policy.
 
-\svfilerange{../policy_pkg/policy.svh}{4}{18}{Expanded \code{policy} interface class}
+\svfile{../policy_pkg/policy.svh}{Expanded \code{policy} interface class}
 
 The \code{name}, \code{description}, and \code{copy} methods are implemented by the policy (or policy macro) directly and provide reporting information useful when printing messages about the policy to the log for the former two, or specific behavior for making a copy for the latter. The remaining three methods are implemented by \code{policy_imp} and are shared by all policies. 
 
@@ -276,7 +276,7 @@ The \code{policy_queue} type is capable of storing any policy that implements th
 
 Our solution encourages loosely coupled code by defining APIs that pass \code{policy_queue} arguments and hide a target object's policies queue from other classes.
 
-\svfilerange{../policy_pkg/policy_container.svh}{4}{22}{The \code{policy_container} interface class}
+\svfile{../policy_pkg/policy_container.svh}{The \code{policy_container} interface class}
 
 This interface class should be implemented by any class that needs to use policies. The method implementations can then be used to manipulate a policy queue as needed, including adding to, replacing, or clearing the queue, and returning a handle to the queue or a copy of the queue to use elsewhere.
 
@@ -328,37 +328,37 @@ The complete policy package is available in Appendix \ref{policy_pkg}, with addi
 
 \section{Policy Package}\label{policy_pkg}
 
-\subsection{policy\_pkg.sv}
+\subsection{policy\_pkg.sv}\label{policy_pkg.sv}
 \svfile{../policy_pkg/policy_pkg.sv}{}
 
-\subsection{policy.svh}
+\subsection{policy.svh}\label{policy.svh}
 \svfile{../policy_pkg/policy.svh}{}
 
-\subsection{policy\_imp.svh}
+\subsection{policy\_imp.svh}\label{policy_imp.svh}
 \svfile{../policy_pkg/policy_imp.svh}{}
 
-\subsection{policy\_container.svh}
+\subsection{policy\_container.svh}\label{policy_container.svh}
 \svfile{../policy_pkg/policy_container.svh}{}
 
-\subsection{policy\_object.svh}
+\subsection{policy\_object.svh}\label{policy_object.svh}
 \svfile{../policy_pkg/policy_object.svh}{}
 
 \newpage
 \section{Policy Macros}\label{policy_macros}
 
-\subsection{policy\_macros.svh}
+\subsection{policy\_macros.svh}\label{policy_macros.svh}
 \svfile{../policy_pkg/macros/policy_macros.svh}{}
 
-\subsection{constant\_policy.svh}
+\subsection{constant\_policy.svh}\label{constant_policy.svh}
 \svfile{../policy_pkg/macros/constant_policy.svh}{}
 
-\subsection{fixed\_policy.svh}
+\subsection{fixed\_policy.svh}\label{fixed_policy.svh}
 \svfile{../policy_pkg/macros/fixed_policy.svh}{}
 
-\subsection{member\_policy.svh}
+\subsection{member\_policy.svh}\label{member_policy.svh}
 \svfile{../policy_pkg/macros/member_policy.svh}{}
 
-\subsection{range\_policy.svh}
+\subsection{range\_policy.svh}\label{range_policy.svh}
 \svfile{../policy_pkg/macros/range_policy.svh}{}
 
 \end{document}
