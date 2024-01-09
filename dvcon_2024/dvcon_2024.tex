@@ -110,7 +110,7 @@ These two base classes provide the core definitions for policies: \code{policy_b
 
 \svfile{example_code/v1_original_policies/addr_txn.svh}{The \code{addr_txn} class and policies for constraining it}
 
-The three policy classes above implement some policies for the \code{addr_txn} class. A list of valid address ranges can be stored in the \code{ranges} array. The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude the address from randomizing inside any of the ranges in its list.
+The \code{addr_permit_policy} and \code{addr_prohibit_policy} classes implement some policies for constraining \code{addr_txn} addresses.  Address ranges can be stored in the \code{ranges} array.  The \code{addr_permit_policy} will choose one of the ranges at random and constrain the address to be within the range, while the \code{addr_prohibit_policy} will exclude addresses that fall within any of the ranges in its list.
 
 The final class shows how policies might be used. The \code{addr_constrained_txn} class extends \code{addr_txn} and defines two policies, one that permits the address to be within one of two ranges, and one that prohibits the address from being within a third range. The \code{addr_constrained_txn} class then passes the local \code{pcy} list to the parent \code{policy} queue.
 
