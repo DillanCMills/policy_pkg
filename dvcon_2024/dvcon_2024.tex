@@ -184,32 +184,22 @@ The base \code{addr_txn} class has complex policies with a relationship between 
 
 \section{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}
 
-A fourth problem we noticed in our initial usage of policy classes was occasional unexpected behavior when attempting to reuse a policy. It is hard to quantify and we never spent time to create a reproducible test case, but some of the policies behaved like they ``remembered'' being randomized when used repeatedly and wouldn't reapply their constraints during subsequent \code{randomize} calls. Rather than spending time to diagnose and fix this issue, we were focusing on transitioning our policy approach to a ``use once and discard'' approach, where we would treat a policy as disposable and apply fresh policy instances before re-randomizing a target object. This improvement happened to resolve the randomization issue as well, so we never had a reason to circle back.
+A fourth problem occurred during our initial deployment of policies.  We observed occasional unexpected behavior when attempting to re-randomize objects with policies.  We didn't thoroughly characterize the behavior, but sometimes policies seemed to ``remember'' previous randomizations and wouldn't reapply their constraints during subsequent \code{randomize} calls.  Results would clearly violate even simple policies.
 
-Fortunately, creating new policy instances for each randomization is not prohibitively expensive.  We anticipated that we would need hundreds or thousands of policies per test, so we aimed to minimize the memory requirements and streamline functionality as much as possible. To minimize the footprint of policies, we chose to implement them as simple classes rather than extensions of \code{uvm_object} (the policy container itself still inherits from \code{uvm_object}). We duplicated some useful capabilities such as a basic copy routine, while omitting more expensive functionality such as factory compatibility or object comparison. The buggy randomization behavior implied we needed to pass in fresh policy instances each time we randomized an object. Two features helped to accomplish this: static constructor functions and a \code{copy} method.
+Our policy architecture prioritizes scalability; policy classes are lightweight with a minimal footprint.  Rather than investing effort to diagnose and work around the problem with reusing policies, we adopted a ``use once and discard'' approach, leaning into their disposable nature.  It costs little to apply fresh policy instances before re-randomizing a target object.  Following this strategy completely eliminated policy misbehavior.
+
+To facilitate a safer form of policy reuse we introduced a \code{copy} method that returns a fresh policy instance initialized to the same state as the policy that implements it.  We also doubled down on our use of static constructors to generate initialized policies.
 
 {\begin{svcode}
 static function addr_parity_err_policy PARITY_ERR(bit value);
     PARITY_ERR = new(value);
 endfunction
 ...
-this.policies.push_back(addr_constrained_txn::POLICIES::PARITY_ERR(1'b1));
+this.policies = '{addr_constrained_txn::POLICIES::PARITY_ERR(1'b1)};
 \end{svcode}
 \captionof{figure}{Example static constructor function from the \code{PARITY_ERR} policy class}}
 
-Using static functions to create new instances of the policies provides an easy way to create and use a policy with a single function call. The policy is created and immediately pushed onto the policy queue, then discarded and recreated the next time it is needed.
-
-{\begin{svcode}
-interface class policy;
-    ...
-    pure virtual function policy copy();
-endclass: policy
-\end{svcode}
-\captionof{figure}{The \code{copy} method in the \code{policy} interface class}}
-
-Adding a \code{copy} method to the policy classes provides a way for a policy to return a fresh copy of itself with the same configuration. This is useful when a policy needs to be reused multiple times. The policy can be copied and pushed onto the policy queue multiple times, or onto other policy queues, and each copy will constrain the field separately. The \code{copy} method is \code{pure virtual}, so it must be implemented by each policy class.
-
-After migrating to this pattern of reuse, the issues we were seeing with unapplied constraints disappeared.
+Passing array literals populated by policy instances from static constructors proved to be an excellent way to pack a lot of intent into little code.  It also neatly works around the reliability issues of reused policies.
 
 \section{More Improvements to the Policy Package}
 
