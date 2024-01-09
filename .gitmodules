@@ -1,3 +1,3 @@
 [submodule "dvcon_2024/pygments-plugin-systemverilog"]
 	path = dvcon_2024/pygments-plugin-systemverilog
-	url = github-DillanCMills:DillanCMills/pygments-plugin-systemverilog.git
+	url = git@github.com:DillanCMills/pygments-plugin-systemverilog.git
