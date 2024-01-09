@@ -237,8 +237,8 @@ virtual function void set_item(uvm_object item);
         `uvm_warning(
             "policy::set_item()",
             $sformatf(
-                "Item <%s> type <%s> is not compatible with policy <%s> type <%s>",
-                item.get_name(), item.get_type_name(), this.name(), this.type_name()
+                "Cannot apply policy '%0s' of type '%0s' to target object '%0s' of incompatible type '%0s'",
+                this.name(), ITEM::type_name(), item.get_name(), item.get_type_name()
             )
         )
         this.m_item = null;
@@ -261,19 +261,17 @@ typedef policy policy_queue[$];
 
 The \code{policy_queue} type is capable of storing any policy that implements the \code{policy} interface. The default queue methods are sufficient for aggregating policies, and in practice we found that using policy queues as containers was more efficient than \code{policy_list} instances. For example, for functions expecting a \code{policy_queue} argument we can directly pass in array literals populated by calls to static constructor functions, allowing us to define, initialize, aggregate, and pass policies all in a single line of code!
 
-\subsection{Provide a common implementation for policy-enabled classes using the \code{policy_container} interface and \code{policy_object} mixin}
+\subsection{Standardize policy implementations with the \code{policy_container} interface and \code{policy_object} mixin}
 
-Our solution encourages loosely coupled code by defining APIs that pass \code{policy_queue} arguments and hide a target object's policies queue from other classes.
+The \code{policy_container} interface class defines a set of functions for managing policies using \code{policy_queue} arguments.  These functions provide a simple, standard way to implement policies across a verification environemnt.
 
 \svfile{../policy_pkg/policy_container.svh}{The \code{policy_container} interface class}
 
-This interface class should be implemented by any class that needs to use policies. The method implementations can then be used to manipulate a policy queue as needed, including adding to, replacing, or clearing the queue, and returning a handle to the queue or a copy of the queue to use elsewhere.
-
-The \code{policy_container} interface class allows for a base class implementation that can be used to manage constraints across the entire class hierarchy. 
+The \code{policy_object} mixin implements the \code{policy_container} interface and contains a protected \code{policy_queue} for managing policies (a complete example is available in Appendix \ref{policy_pkg}).
 
 \svfile{example_code/v5_policy_macros/policy_object.svh}{A \code{policy_object} base class implementation}
 
-This base class implements all the \code{policy_container} functionality (a complete example is available in Appendix \ref{policy_pkg}). Packaging a common implementation and interface into a mixin enables sharing a common implementation and API for policy support among any classes that might benefit from the use of policies, as seen in the following example.
+The \code{policy_object} mixin can be applied to any class that might benefit from the use of policies, as seen in the following examples.
 
 {\begin{svcode}
 // Use policy_object for transactions
@@ -285,7 +283,7 @@ class base_seq #(type REQ=uvm_sequence_item, RSP=REQ) extends policy_object #( u
 // Use policy_object for configuration objects
 class cfg_object extends policy_object #(uvm_object);
 \end{svcode}
-\captionof{figure}{Example classes using the \code{policy_object} base class}}
+\captionof{figure}{Example classes using the \code{policy_object} mixin}}
 
 \subsection{Protecting the policy queue enforces loosely coupled code}
 
