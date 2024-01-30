@@ -1,0 +1,273 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{minted}
+\renewcommand{\MintedPygmentize}{./pygments-plugin-systemverilog/venv/bin/pygmentize}
+\usepackage[framemethod=TikZ]{mdframed}
+
+\mdfsetup{
+    middlelinewidth   = 2,
+    roundcorner       = 10pt,
+    leftmargin        = 40,
+    rightmargin       = 40,
+    backgroundcolor   = gray!05,
+    middlelinecolor   = gray!30!white,
+    innertopmargin    = \topskip,
+    innerbottommargin = \topskip,
+    splittopskip      = \topskip,
+}
+
+\usemintedstyle{sv-style-light}
+
+\newcommand{\code}[1]{
+  \textbf{\mintinline{text}{#1}}
+}
+
+\newminted[svcode]{sv-lang}{
+    linenos,
+    numbersep=16pt,
+    breaklines,
+}
+
+\newminted[pycode]{python}{
+    linenos,
+    numbersep=16pt,
+    breaklines,
+}
+
+\surroundwithmdframed{svcode}
+\surroundwithmdframed{pycode}
+
+\usetheme{default}
+\setbeamertemplate{itemize items}{\color{black}$\bullet$}
+\setbeamertemplate{footline}[text line]{}
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamercolor{frametitle}{fg=black}
+\setbeamerfont{frametitle}{size=\Huge}
+\setbeamertemplate{frametitle}{
+  \vspace{0.5cm}
+  \insertframetitle
+}
+
+% Footer
+\setbeamertemplate{background}{
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image1.png}
+    };
+    \node[above right=0.1cm] (logo2) at (current page.south west) {
+      \includegraphics[height=0.8cm]{images/image2.png}
+    };
+  \end{tikzpicture}
+}
+
+\begin{document}
+
+% Title page
+{
+  \setbeamertemplate{background}{
+    \begin{tikzpicture}[overlay, remember picture]
+      \node[] at (current page.center){
+        \includegraphics[height=\paperheight]{images/image3.png}
+      };
+    \end{tikzpicture}
+  }
+  \begin{frame}
+    \begin{tikzpicture}[overlay, remember picture]
+    \linespread{2.2}
+    \node[below=0.5cm] (logo) at (current page.north) {
+      \includegraphics[height=4cm]{images/image4.png}
+    };
+    \node[below, align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (logo.south) {
+      {\color{white}\Huge{Four Problems with Policy-Based Constraints and How to Fix Them}}
+    };
+    \linespread{1}
+    \node[below left, inner xsep=15pt, inner ysep=10pt, text width=0.3\textwidth] (author1) at (title.south){
+      {\color{lightgray}\large {Dillan Mills} \\[5pt]
+      \large{Synopsys, Inc.}}
+    };
+    \node[below right, inner xsep=15pt, inner ysep=10pt, text width=0.3\textwidth] (author2) at (title.south){
+      {\color{lightgray}\large {Chip Haldane} \\[5pt]
+      \large{The Chip Abides, LLC}}
+    };
+    \node[above left=0.4cm] (logo2) at (current page.south east) {
+      \includegraphics[height=0.8cm]{images/image2.png}
+    };
+    \end{tikzpicture}
+  \end{frame}
+}
+
+% Constraints and Policy Class Review
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Constraints and Policy Class Review}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Constraints and Policy Class Review}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Problem 1: Parameterized Policies
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Problem \#1: Parameterized Policies}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Problem \#1: Parameterized Policies}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Problem 2: Definition Location
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Problem \#2: Definition Location}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Problem \#2: Definition Location}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Problem 3: Boilerplate Overload
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Problem \#3: Boilerplate Overload}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Problem \#3: Boilerplate Overload}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Problem 4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \linespread{2.5}
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% More Improvements to the Policy Package
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \linespread{2.5}
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{More Improvements to the Policy Package}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{More Improvements to the Policy Package}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Conclusion
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Conclusion}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Conclusion}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+% Questions
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Questions?}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+\end{document}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Templates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Section slide
+\begin{frame}
+  \begin{tikzpicture}[overlay, remember picture]
+    \node[] at (current page.center){
+      \includegraphics[height=\paperheight]{images/image5.png}
+    };
+    \node[align=center, minimum width=0.7\textwidth, text width=1\textwidth] (title) at (current page.center) {
+      {\color{white}\Huge{Slide Title} \\[10pt]
+      \huge{Slide Subtitle}}
+    };
+  \end{tikzpicture}
+\end{frame}
+
+% Content slide
+\begin{frame}{Title}
+  \begin{itemize}
+    \item Content
+  \end{itemize}
+\end{frame}
+
+\begin{itemize}
+  \item 
+\end{itemize}
