@@ -10,16 +10,41 @@
 \mdfsetup{
     middlelinewidth   = 2,
     roundcorner       = 10pt,
-    leftmargin        = 40,
-    rightmargin       = 40,
+    leftmargin        = -10pt,
+    rightmargin       = -10pt,
     backgroundcolor   = gray!05,
     middlelinecolor   = gray!30!white,
-    innertopmargin    = \topskip,
-    innerbottommargin = \topskip,
+    innertopmargin    = 0.1cm,
+    innerbottommargin = 0.1cm,
     splittopskip      = \topskip,
 }
 
 \usemintedstyle{sv-style-light}
+
+\newcommand{\svfile}[2]{{
+\begin{mdframed}
+\inputminted[
+    linenos,
+    numbersep=16pt,
+    breaklines,
+]{sv-lang}{#1}
+\end{mdframed}
+\ifthenelse{\equal{#2}{}}{}{\captionof{figure}{#2}}
+}}
+
+\newcommand{\svfilerange}[4]{{
+\begin{mdframed}
+\inputminted[
+    linenos,
+    numbersep=16pt,
+    breaklines,
+    firstline=#2,
+    lastline=#3,
+    firstnumber=1,
+]{sv-lang}{#1}
+\end{mdframed}
+\ifthenelse{\equal{#4}{}}{}{\captionof{figure}{#4}}
+}}
 
 \newcommand{\code}[1]{
   \textbf{\mintinline{text}{#1}}
@@ -42,15 +67,12 @@
 
 \usetheme{default}
 \setbeamertemplate{itemize items}{\color{black}$\bullet$}
-\setbeamertemplate{footline}[text line]{}
+\setbeamertemplate{footline}{\vspace{1.4cm}}
 \setbeamertemplate{navigation symbols}{}
 
 \setbeamercolor{frametitle}{fg=black}
-\setbeamerfont{frametitle}{size=\Huge}
-\setbeamertemplate{frametitle}{
-  \vspace{0.5cm}
-  \insertframetitle
-}
+\setbeamerfont{frametitle}{size=\huge}
+\setbeamertemplate{frametitle}{\vspace{0.5cm}\insertframetitle}
 
 % Footer
 \setbeamertemplate{background}{
@@ -60,6 +82,9 @@
     };
     \node[above right=0.1cm] (logo2) at (current page.south west) {
       \includegraphics[height=0.8cm]{images/image2.png}
+    };
+    \node[below left=0.1cm] (page number) at (current page.north east) {
+      \tiny{\insertframenumber}
     };
   \end{tikzpicture}
 }
@@ -112,10 +137,103 @@
   \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Constraints and Policy Class Review}
+\begin{frame}{Constraints Review}
   \begin{itemize}
-    \item Content
+    \item Random objects and constraints are the foundational building blocks of constrained random verification
+    \item Embedded fixed constraints are simple but lack flexibility
+    \item In-line constraints are marginally more flexible but their definitions are still fixed within the calling context
+    \item In-line constraints must all be specified within a single call to \code{randomize()} 
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Policy Class Review}
+  \begin{itemize}
+    \item Policy classes are a technique for applying constraints in a portable, reusable, and incremental manner
+    \item Leverage an aspect of "global constraints", simultaneously solving constraints across a set of random objects
+    \item Randomizing a class that contains policies also randomizes the policies
+    \item The policies contain a reference back to the container
+    \item Consequently, the policy container is constrained by the policies it contains
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Policy Class Example: \code{policy_base}}
+\svfilerange{example_code/v1_original_policies/policy_base.svh}{1}{7}{}
+\end{frame}
+
+\begin{frame}{Policy Class Example: \code{policy_list}}
+\svfilerange{example_code/v1_original_policies/policy_base.svh}{9}{19}{}
+\end{frame}
+
+\begin{frame}{\code{policy_base} and \code{policy_list} Summary}
+  \begin{itemize}
+    \item These two base classes provide the core definitions for policies
+    \item \code{policy_base} implements the hook back to the policy container
+    \item \code{policy_list} organizes related policies into groups
+    \item The parameterization requires a unique specialization for each policy-enabled container
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Policy Class Example: Implementation}
+\scriptsize
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_txn;
+  rand addr_t addr;
+  rand policy_base#(addr_txn) policy[$];
+
+  function void pre_randomize;
+    foreach(policy[i])
+      policy[i].set_item(this);
+  endfunction
+endclass
+\end{svcode}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_policy extends policy_base#(addr_txn);
+  rand addr_t addrs[$];
+
+  function void add(addr_t addr);
+    addrs.push_back(addr);
+  endfunction
+
+  constraint c_addr {
+    item.addr inside {addrs};
+  }
+endclass
+\end{svcode}
+\end{column}
+\end{columns}
+\normalsize
+\begin{itemize}
+\item \code{addr_txn.addr} will be constrained to one of the values added through \code{addr_policy}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Policy Class Example: Usage}
+\begin{columns}
+\begin{column}{0.65\textwidth}
+\begin{svcode}
+class addr_constrained_txn extends addr_txn;
+  function new;
+    addr_policy addr_policy = new;
+    policy_list#(addr_txn) pcy = new;
+    addr_policy.add('h00000000);
+    addr_policy.add('h10000000);
+    pcy.add(addr_policy);
+    this.policy = {pcy};
+  endfunction
+endclass
+\end{svcode}
+\end{column}
+\begin{column}{0.3\textwidth}
+  \begin{itemize}
+    \item Instantiate and randomize like normal with a call to \code{txn.randomize();}
+    \item Each value added to the policy list will be used to constrain the \code{addr} field
+  \end{itemize}
+\end{column}
+\end{columns}
 \end{frame}
 
 % Problem 1: Parameterized Policies
@@ -132,8 +250,128 @@
 
 \begin{frame}{Problem \#1: Parameterized Policies}
   \begin{itemize}
-    \item Content
+    \item \code{policy_base} is parameterized to the class it constrains
+    \item Different specializations cannot be grouped and indexed
+    \item An extended class hierarchy with constrainable values in each level requires a unique policy type and policy list for each level
+    \item Each list must be separately traversed and mapped back to the container during \code{pre_randomize}
+    \item Users have to keep track of the different lists and which signals apply to each list
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Parameterized Policies: Example}
+\scriptsize
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_p_txn extends addr_txn;
+  rand bit parity;
+  rand policy_base#(addr_p_txn) p_policy[$];
+
+  function void pre_randomize;
+    foreach(p_policy[i])
+      p_policy[i].set_item(this);
+  endfunction
+endclass
+\end{svcode}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_c_txn extends addr_p_txn;
+  function new;
+    policy_list#(addr_txn) pcy = new;
+    policy_list#(addr_p_txn) p_pcy = new;
+    pcy.add(/*addr policies*/);
+    p_pcy.add(/*parity policies*/);
+    this.policy = {pcy};
+    this.p_policy = {p_pcy};
+  endfunction
+endclass
+\end{svcode}
+\end{column}
+\end{columns}
+\vspace{0.2cm}
+\normalsize
+\begin{itemize}
+\item This method will not scale---each additional subclass requires a new policy type and list
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Parameterized Policies: Solution}
+\begin{columns}
+\begin{column}{0.3\textwidth}
+\begin{itemize}
+  \item Replace the parameterized policy base with a non-parameterized base
+  \item Move the parameterization to an extension class that implements the base
+\end{itemize}
+\end{column}
+\begin{column}{0.6\textwidth}
+\scriptsize
+\begin{svcode}
+interface class policy;
+  pure virtual function void set_item(uvm_object item);
+endclass
+
+virtual class policy_imp#(type ITEM=uvm_object) implements policy;
+  protected rand ITEM m_item;
+
+  virtual function void set_item(uvm_object item);
+    if (!$cast(m_item, item)) /* cleanup */;
+  endfunction
+endclass
+
+typedef policy policy_queue[$];
+\end{svcode}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Policy Interface and Implementation Classes}
+\begin{itemize}
+  \item Non-parameterized base enables all policies targeting a particular class hierarchy to be stored in a single common \code{policy_queue}
+  \item Parameterized \code{policy_imp} implements the base and provides core functionality required by all policies
+  \item No strong typing means all implementing classes must share a common base class---\code{uvm_object} is a safe choice for UVM testbenches
+  \item \code{set_item()} must handle the cases where an invalid type is passed in
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Policy Definition Updates}
+\begin{itemize}
+  \item Policy definitions are mostly still the same as when using parameterized classes
+  \item Policy classes should be updated to extend the new \code{policy_imp} class
+\end{itemize}
+\begin{svcode}
+class addr_policy extends policy_imp#(addr_txn);
+\end{svcode}
+\begin{itemize}
+  \item Underlying constraints should be written as implications to verify \code{item} is not missing 
+  \end{itemize}
+\begin{svcode}
+constraint c_addr {m_item != null -> m_item.addr inside {addrs};}
+\end{svcode}
+\end{frame}
+
+\begin{frame}{Policy Implementation and Usage Updates}
+\begin{itemize}
+  \item The base txn class needs to inherit from \code{uvm_object} to be type-compatible
+  \item The \code{policies} list in the base txn is replaced with a \code{rand policy_queue policies} declaration
+  \item subclasses of the base txn class no longer need their own policy lists or \code{pre_randomize()} functions
+  \item The constrained txn can push all policies into the shared \code{policy_queue} in the base txn class
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Policy Usage Example}
+\begin{svcode}
+class addr_txn extends uvm_object;
+  rand policy_queue policies;
+// ...
+class addr_c_txn extends addr_p_txn;
+  function new;
+    // ...
+    this.policies.push_back(/*addr_txn policies*/);
+    this.policies.push_back(/*addr_p_txn policies*/);
+  endfunction
+endclass
+\end{svcode}
 \end{frame}
 
 % Problem 2: Definition Location
@@ -150,8 +388,87 @@
 
 \begin{frame}{Problem \#2: Definition Location}
   \begin{itemize}
-    \item Content
+    \item ``Where should I define my policy classes?''
+    \vspace{8pt}
+    \item Easy enough to stick them in a file close to the class they are constraining
+    \vspace{8pt}
+    \item Better solution: directly embed policy definitions in the class they constrain
+    \begin{itemize}
+      \vspace{8pt}
+      \item Eliminates all guesswork about where to define and discover policies
+      \vspace{8pt}
+      \item Embedded policies gain access to all members of their container class (including protected properties and methods)
+    \end{itemize}
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Embedded Policy Example}
+\scriptsize
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_txn extends uvm_object;
+  class POLICIES;
+    /* policy definitions */
+  endclass
+endclass
+
+class addr_p_txn extends addr_txn;
+  class POLICIES extends addr_txn::POLICIES;
+    /* additional policy definitions */
+  endclass
+endclass
+\end{svcode}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{svcode}
+class addr_c_txn extends addr_p_txn;
+  function new;
+    addr_c_txn::POLICIES::addr_policy a_pcy = new(/*...*/);
+    this.policies.push_back(a_pcy);
+  endfunction
+endclass
+\end{svcode}
+\normalsize
+\begin{itemize}
+  \item Wrap the policies in a \code{POLICIES} class to optimize organization
+  \item subclass \code{POLICIES} extend from parent \code{POLICIES}
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Optimize Further}
+\begin{columns}
+\begin{column}{0.40\textwidth}
+\begin{itemize}
+  \item Mark properties \code{protected} so they can only be manipulated with policies
+  \vspace{8pt}
+  \item Add static functions to instantiate and initialize policies with a single call
+\end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth}
+\scriptsize
+\begin{svcode}
+class addr_txn extends uvm_object;
+  protected rand a_t addr;
+  class POLICIES;
+    // addr_policy definition
+    static function addr_policy FIXED_ADDR(a_t a);
+      FIXED_ADDR = new(a);
+    endfunction
+  endclass
+endclass
+
+class addr_c_txn extends addr_p_txn;
+  function new;
+    this.policies.push_back(
+      addr_c_txn::POLICIES::FIXED_ADDR('hFF00));
+  endfunction
+endclass
+\end{svcode}
+\end{column}
+\end{columns}
 \end{frame}
 
 % Problem 3: Boilerplate Overload
@@ -185,7 +502,7 @@
   \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}
+\begin{frame}{\LARGE{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}}
   \begin{itemize}
     \item Content
   \end{itemize}

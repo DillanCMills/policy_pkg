@@ -156,7 +156,6 @@ However, the address transaction classes are simplified considerably. Only a sin
 
 \svfile{example_code/v3_extended_policies/addr_txn.svh}{Address transaction classes updated to use the new policy implementation}
 
-
 \section{Problem \#2: Definition Location}
 
 The second problem with policies is ``where do I define my policy classes?'' This is not a complicated problem to solve; most users will likely wish to place their policy classes in a file or files close to the class they are constraining. However, directly embedding policy definitions within the class they constrain offers a myriad of benefits.  Not only does this convention eliminate all guesswork about where to define and discover policies, but embedded policies also gain access to all members of their container class, including protected properties and methods!  This privileged access enables policies to constrain attributes of a class that are not otherwise exposed, improving encapsulation.
