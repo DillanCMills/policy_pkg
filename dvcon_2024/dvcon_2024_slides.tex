@@ -453,7 +453,7 @@ endclass
 class addr_txn extends uvm_object;
   protected rand a_t addr;
   class POLICIES;
-    // addr_policy definition
+    // ... addr_policy definition
     static function addr_policy FIXED_ADDR(a_t a);
       FIXED_ADDR = new(a);
     endfunction
@@ -483,10 +483,39 @@ endclass
   \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Problem \#3: Boilerplate Overload}
+\begin{frame}[fragile]{Problem \#3: Boilerplate Overload}
   \begin{itemize}
-    \item Content
+    \item Every policy requires a class definition, a constructor, and a constraint (at a minimum)
+    \item Relatively unavoidable for complex policies
+    \item Generic policy types that show up a lot can be simplified with a macro
+    \item Use macros to set up the embedded \code{POLICIES} class, the policy definition, and a static constructor
   \end{itemize}
+  \scriptsize
+\begin{columns}
+\begin{column}{0.6\textwidth}
+\begin{svcode}
+class addr_p_txn extends addr_txn;
+  `start_extended_policies(addr_p_txn, addr_txn)
+    `fixed_policy(PARITY_ERR, parity_err, bit)
+  `end_policies
+endclass
+\end{svcode}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Policy Macros}
+\begin{itemize}
+  \item Ideal for properties with simple constraints, such as equality, range, or set membership constraints
+  \vspace{8pt}
+  \item Complex constraints with relationships between multiple properties are harder to turn into a macro
+  \begin{itemize}
+    \vspace{8pt}
+    \item They can be left as-is, defined within the \code{POLICIES} class
+    \vspace{8pt}
+    \item They can be moved to a separate file and added to the \code{POLICIES} class through \code{`include}
+  \end{itemize}
+\end{itemize}
 \end{frame}
 
 % Problem 4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies
@@ -504,7 +533,11 @@ endclass
 
 \begin{frame}{\LARGE{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}}
   \begin{itemize}
-    \item Content
+    \item Observed occasional unexpected behavior when re-randomizing objects with policies
+    \item Policies seemed to ``remember'' previous randomizations and wouldn't reapply constraints
+    \item Sidestep the issue---keep policy classes extremely lightweight and adopt a ``use once and discard'' approach
+    \item Introduce a \code{copy()} method that returns a fresh policy instance initialized to the same state as the policy that implements it
+    \item Rely on static constructors to generate initialized policies automatically
   \end{itemize}
 \end{frame}
 
@@ -523,8 +556,105 @@ endclass
 
 \begin{frame}{More Improvements to the Policy Package}
   \begin{itemize}
-    \item Content
+    \item Lots of nice improvements to the original policy package so far
+    \vspace{8pt}
+    \item Still lacking many features that would be useful in real-world implementations
+    \vspace{8pt}
+    \item Refer to the paper for complete code examples and a more detailed discussion of the following features
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Expanding the \code{policy} interface class}
+\svfile{../policy_pkg/policy.svh}{}
+\end{frame}
+
+\begin{frame}[fragile]{Better type safety checking and reporting in \code{policy_imp} methods}
+\scriptsize
+\begin{svcode}
+virtual function void set_item(uvm_object item);
+    if (item == null) 
+        `uvm_error(/* NULL item passed */)
+    else if ((this.item_is_compatible(item)) && $cast(this.m_item, item)) begin
+        `uvm_info(/* Policy applied */)
+        this.m_item.rand_mode(1);
+    end else begin
+        `uvm_warning(/* Incompatible type */)
+        this.m_item = null;
+        this.m_item.rand_mode(0);
+    end
+endfunction
+\end{svcode}
+\end{frame}
+
+\begin{frame}[fragile]{\LARGE{Replacing \code{policy_list} with \code{policy_queue}}}
+\begin{itemize}
+  \item The original policy implementation used a dedicated \code{policy_list} class to hold policies
+  \item With the new implementation, all you need is a typedef queue
+\end{itemize}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\vspace{-0.2cm}
+\begin{svcode}
+typedef policy policy_queue[$];
+\end{svcode}
+\vspace{0.1cm}
+\end{column}
+\end{columns}
+\begin{itemize}
+  \item A \code{policy_queue} can hold any policy that implements the \code{policy} interface
+  \item Default queue methods can be used to aggregate policies
+  \item array literals can be used where a \code{policy_queue} is expected
+  \item define, initialize, aggregate, and pass policies all in a single line of code!
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{\Large{Standardize policy implementations with the \code{policy_container} interface and \code{policy_object} mixin}}
+\begin{svcode}
+interface class policy_container;
+  pure virtual function bit has_policies();
+
+  pure virtual function void set_policies(policy_queue policies);
+  pure virtual function void add_policies(policy_queue policies);
+  pure virtual function void clear_policies();
+
+  pure virtual function policy_queue get_policies();
+
+  pure virtual function policy_queue copy_policies();
+endclass
+\end{svcode}
+\end{frame}
+
+\begin{frame}[fragile]{Using the \code{policy_container} interface class and \code{policy_object} mixin}
+\scriptsize
+\begin{svcode}
+class policy_object #(type BASE=uvm_object) extends BASE implements policy_container;
+  protected policy_queue m_policies;
+  // ... fill out policy_container functions
+endclass
+\end{svcode}
+\begin{svcode}
+// Use policy_object for transactions
+class base_txn extends policy_object #(uvm_sequence_item);
+
+// Use policy_object for sequences
+class base_seq #(type REQ=uvm_sequence_item, RSP=REQ) extends policy_object #( uvm_sequence#(REQ, RSP) );
+
+// Use policy_object for configuration objects
+class cfg_object extends policy_object #(uvm_object);
+\end{svcode}
+\end{frame}
+
+\begin{frame}[fragile]{Protecting the policy queue enforces loosely coupled code}
+\begin{itemize}
+  \item Using \code{policy_object} along with \code{policy_container} allows the policy queue to be protected to prevent direct access
+  \item Original implementation required calling \code{set_item} on each policy during \code{pre_randomize}
+  \begin{itemize}
+    \item Required because \code{policy_list} was public so callers could add policies without linking to the target class
+  \end{itemize}
+  \item Making it private forces callers to set or add policies with the exposed interface methods
+  \item These methods can also check compatibility and call \code{set_item} immediately
+  \item Removes the reliance on \code{pre_randomize}
+\end{itemize}
 \end{frame}
 
 % Conclusion
@@ -541,7 +671,11 @@ endclass
 
 \begin{frame}{Conclusion}
   \begin{itemize}
-    \item Content
+    \item Improvements to the original policy package provide a robust and efficient implementation of policy-based constraints
+    \item The policy package is now capable of managing constraints across an entire class hierarchy
+    \item The policy definitions are tightly paired with the class they constrain
+    \item Macros reduce the expense of defining common policies while still allowing flexibility for custom policies
+    \item A complete implementation is available in the Appendix of the paper and on GitHub which can be included directly in a project to start using policies immediately
   \end{itemize}
 \end{frame}
 
