@@ -7,20 +7,20 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
     pure virtual function policy copy();
 
     virtual function string type_name();
-        return( ITEM::type_name );
+        return (ITEM::type_name);
     endfunction: type_name
 
     virtual function bit item_is_compatible(uvm_object item);
         ITEM local_item;
 
-        return( (item != null) && ($cast(local_item, item)) );
+        return ((item != null) && ($cast(local_item, item)));
     endfunction: item_is_compatible
 
     virtual function void set_item(uvm_object item);
-        if (item == null) begin
+        if (item == null)
             `uvm_error("policy::set_item()", "NULL item passed")
 
-        end else if ((this.item_is_compatible(item)) && $cast(this.m_item, item)) begin
+        else if ((this.item_is_compatible(item)) && $cast(this.m_item, item)) begin
             `uvm_info(
                 "policy::set_item()",
                 $sformatf(

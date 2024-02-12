@@ -14,7 +14,7 @@
         constrant c_policy_constraint {                                       \
             (m_item != null) -> (                                             \
                 (l_exclude) ^                                                 \
-                ((m_item.FIELD >= l_low && m_item.FIELD <= l_high))           \
+                (m_item.FIELD >= l_low && m_item.FIELD <= l_high)           \
             );                                                                \
         }                                                                     \
                                                                               \

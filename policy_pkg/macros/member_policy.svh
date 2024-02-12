@@ -41,7 +41,7 @@
                     i == m_values.size()-1 ? "" : ", "};                      \
                                                                               \
             return ({                                                         \
-                `"POLICY(FIELD ",                                             \
+                `"(FIELD ",                                                   \
                 l_exclude ? "outside {" : "inside {",                         \
                 values_str,                                                   \
                 `"})`"                                                        \
