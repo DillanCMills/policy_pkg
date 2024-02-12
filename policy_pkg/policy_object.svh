@@ -13,11 +13,11 @@ class policy_object #(type BASE=uvm_object) extends BASE implements policy_conta
             `uvm_warning( "policy", "set_policies() replacing existing policies" )
 
         this.m_policies = {};
-        foreach(policies(i)) try_add_policy(policies[i]);
+        foreach(policies[i]) try_add_policy(policies[i]);
     endfunction: set_policies
 
     virtual function void add_policies(policy_queue policies);
-        foreach(policies(i)) try_add_policy(policies[i]);
+        foreach(policies[i]) try_add_policy(policies[i]);
     endfunction: add_policies
 
     virtual function void clear_policies();
