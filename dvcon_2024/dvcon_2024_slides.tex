@@ -2,10 +2,11 @@
 \usepackage{tikz}
 \usepackage{graphicx}
 \usepackage{helvet}
-\renewcommand{\familydefault}{\sfdefault}
 \usepackage{minted}
 \renewcommand{\MintedPygmentize}{./pygments-plugin-systemverilog/venv/bin/pygmentize}
 \usepackage[framemethod=TikZ]{mdframed}
+\usepackage{hyperref}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
 
 \mdfsetup{
     middlelinewidth   = 2,
@@ -139,6 +140,7 @@
 
 \begin{frame}{Constraints Review}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item Random objects and constraints are the foundational building blocks of constrained random verification
     \item Embedded fixed constraints are simple but lack flexibility
     \item In-line constraints are marginally more flexible but their definitions are still fixed within the calling context
@@ -148,6 +150,7 @@
 
 \begin{frame}{Policy Class Review}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item Policy classes are a technique for applying constraints in a portable, reusable, and incremental manner
     \item Leverage an aspect of "global constraints", simultaneously solving constraints across a set of random objects
     \item Randomizing a class that contains policies also randomizes the policies
@@ -165,12 +168,16 @@
 \end{frame}
 
 \begin{frame}{\code{policy_base} and \code{policy_list} Summary}
+\begin{columns}
+\column{1.01\textwidth}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item These two base classes provide the core definitions for policies
     \item \code{policy_base} implements the hook back to the policy container
     \item \code{policy_list} organizes related policies into groups
-    \item The parameterization requires a unique specialization for each policy-enabled container
+    \item Parameterization requires a unique specialization per policy-enabled container
   \end{itemize}
+\end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Policy Class Example: Implementation}
@@ -203,11 +210,12 @@ class addr_policy extends policy_base#(addr_txn);
   }
 endclass
 \end{svcode}
+\vspace{0.2cm}
 \end{column}
 \end{columns}
 \normalsize
 \begin{itemize}
-\item \code{addr_txn.addr} will be constrained to one of the values added through \code{addr_policy}
+\item \code{addr_txn.addr} is constrained to a value added through \code{addr_policy}
 \end{itemize}
 \end{frame}
 
@@ -229,8 +237,8 @@ endclass
 \end{column}
 \begin{column}{0.3\textwidth}
   \begin{itemize}
-    \item Instantiate and randomize like normal with a call to \code{txn.randomize();}
-    \item Each value added to the policy list will be used to constrain the \code{addr} field
+    \item Instantiate and randomize like normal with a call to \code{txn.randomize()}
+    \item Each value added to the policy list will constrain \code{addr}
   \end{itemize}
 \end{column}
 \end{columns}
@@ -250,11 +258,12 @@ endclass
 
 \begin{frame}{Problem \#1: Parameterized Policies}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item \code{policy_base} is parameterized to the class it constrains
     \item Different specializations cannot be grouped and indexed
     \item An extended class hierarchy with constrainable values in each level requires a unique policy type and policy list for each level
     \item Each list must be separately traversed and mapped back to the container during \code{pre_randomize}
-    \item Users have to keep track of the different lists and which signals apply to each list
+    \item Users have to keep track of the different lists and which signals belong to each
   \end{itemize}
 \end{frame}
 
@@ -300,8 +309,9 @@ endclass
 \begin{columns}
 \begin{column}{0.3\textwidth}
 \begin{itemize}
+  \setlength\itemsep{1em}
   \item Replace the parameterized policy base with a non-parameterized base
-  \item Move the parameterization to an extension class that implements the base
+  \item Move parameters to an extension class that implements the interface
 \end{itemize}
 \end{column}
 \begin{column}{0.6\textwidth}
@@ -327,6 +337,7 @@ typedef policy policy_queue[$];
 
 \begin{frame}{Policy Interface and Implementation Classes}
 \begin{itemize}
+  \setlength\itemsep{1em}
   \item Non-parameterized base enables all policies targeting a particular class hierarchy to be stored in a single common \code{policy_queue}
   \item Parameterized \code{policy_imp} implements the base and provides core functionality required by all policies
   \item No strong typing means all implementing classes must share a common base class---\code{uvm_object} is a safe choice for UVM testbenches
@@ -336,14 +347,15 @@ typedef policy policy_queue[$];
 
 \begin{frame}[fragile]{Policy Definition Updates}
 \begin{itemize}
-  \item Policy definitions are mostly still the same as when using parameterized classes
+  \setlength\itemsep{1em}
+  \item Policy definitions are mostly still the same as original classes
   \item Policy classes should be updated to extend the new \code{policy_imp} class
 \end{itemize}
 \begin{svcode}
 class addr_policy extends policy_imp#(addr_txn);
 \end{svcode}
 \begin{itemize}
-  \item Underlying constraints should be written as implications to verify \code{item} is not missing 
+  \item Constraints should be written as implications in case \code{item} is missing
   \end{itemize}
 \begin{svcode}
 constraint c_addr {m_item != null -> m_item.addr inside {addrs};}
@@ -352,9 +364,10 @@ constraint c_addr {m_item != null -> m_item.addr inside {addrs};}
 
 \begin{frame}{Policy Implementation and Usage Updates}
 \begin{itemize}
+  \setlength\itemsep{1em}
   \item The base txn class needs to inherit from \code{uvm_object} to be type-compatible
   \item The \code{policies} list in the base txn is replaced with a \code{rand policy_queue policies} declaration
-  \item subclasses of the base txn class no longer need their own policy lists or \code{pre_randomize()} functions
+  \item Subclasses of the base txn class no longer need their own policy lists or \code{pre_randomize()} functions
   \item The constrained txn can push all policies into the shared \code{policy_queue} in the base txn class
 \end{itemize}
 \end{frame}
@@ -388,15 +401,14 @@ endclass
 
 \begin{frame}{Problem \#2: Definition Location}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item ``Where should I define my policy classes?''
-    \vspace{8pt}
     \item Easy enough to stick them in a file close to the class they are constraining
-    \vspace{8pt}
     \item Better solution: directly embed policy definitions in the class they constrain
+    \vspace{8pt}
     \begin{itemize}
-      \vspace{8pt}
+      \setlength\itemsep{1em}
       \item Eliminates all guesswork about where to define and discover policies
-      \vspace{8pt}
       \item Embedded policies gain access to all members of their container class (including protected properties and methods)
     \end{itemize}
   \end{itemize}
@@ -432,7 +444,7 @@ endclass
 \normalsize
 \begin{itemize}
   \item Wrap the policies in a \code{POLICIES} class to optimize organization
-  \item subclass \code{POLICIES} extend from parent \code{POLICIES}
+  \item Subclass \code{POLICIES} extend from parent \code{POLICIES}
 \end{itemize}
 \end{column}
 \end{columns}
@@ -442,8 +454,8 @@ endclass
 \begin{columns}
 \begin{column}{0.40\textwidth}
 \begin{itemize}
+  \setlength\itemsep{1em}
   \item Mark properties \code{protected} so they can only be manipulated with policies
-  \vspace{8pt}
   \item Add static functions to instantiate and initialize policies with a single call
 \end{itemize}
 \end{column}
@@ -485,7 +497,7 @@ endclass
 
 \begin{frame}[fragile]{Problem \#3: Boilerplate Overload}
   \begin{itemize}
-    \item Every policy requires a class definition, a constructor, and a constraint (at a minimum)
+    \item Policies require a class definition, a constructor, and a constraint (at a minimum)
     \item Relatively unavoidable for complex policies
     \item Generic policy types that show up a lot can be simplified with a macro
     \item Use macros to set up the embedded \code{POLICIES} class, the policy definition, and a static constructor
@@ -506,14 +518,14 @@ endclass
 
 \begin{frame}{Policy Macros}
 \begin{itemize}
+  \setlength\itemsep{1em}
   \item Ideal for properties with simple constraints, such as equality, range, or set membership constraints
-  \vspace{8pt}
   \item Complex constraints with relationships between multiple properties are harder to turn into a macro
+  \vspace{8pt}
   \begin{itemize}
-    \vspace{8pt}
+    \setlength\itemsep{1em}
     \item They can be left as-is, defined within the \code{POLICIES} class
-    \vspace{8pt}
-    \item They can be moved to a separate file and added to the \code{POLICIES} class through \code{`include}
+    \item Define in a separate file and add to the \code{POLICIES} class with \code{`include}
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -533,8 +545,9 @@ endclass
 
 \begin{frame}{\LARGE{Problem \#4: Unexpected Policy Reuse Behavior and Optimizing for Lightweight Policies}}
   \begin{itemize}
-    \item Observed occasional unexpected behavior when re-randomizing objects with policies
-    \item Policies seemed to ``remember'' previous randomizations and wouldn't reapply constraints
+    \setlength\itemsep{1em}
+    \item Occasional unexpected behavior when re-randomizing objects with policies
+    \item Policies ``remember'' previous randomizations and wouldn't reapply constraints
     \item Sidestep the issue---keep policy classes extremely lightweight and adopt a ``use once and discard'' approach
     \item Introduce a \code{copy()} method that returns a fresh policy instance initialized to the same state as the policy that implements it
     \item Rely on static constructors to generate initialized policies automatically
@@ -556,10 +569,9 @@ endclass
 
 \begin{frame}{More Improvements to the Policy Package}
   \begin{itemize}
+    \setlength\itemsep{1em}
     \item Lots of nice improvements to the original policy package so far
-    \vspace{8pt}
     \item Still lacking many features that would be useful in real-world implementations
-    \vspace{8pt}
     \item Refer to the paper for complete code examples and a more detailed discussion of the following features
   \end{itemize}
 \end{frame}
@@ -588,7 +600,8 @@ endfunction
 
 \begin{frame}[fragile]{\LARGE{Replacing \code{policy_list} with \code{policy_queue}}}
 \begin{itemize}
-  \item The original policy implementation used a dedicated \code{policy_list} class to hold policies
+  \setlength\itemsep{0.8em}
+  \item The original policy implementation used a \code{policy_list} to hold policies
   \item With the new implementation, all you need is a typedef queue
 \end{itemize}
 \begin{columns}
@@ -601,10 +614,11 @@ typedef policy policy_queue[$];
 \end{column}
 \end{columns}
 \begin{itemize}
+  \setlength\itemsep{0.8em}
   \item A \code{policy_queue} can hold any policy that implements the \code{policy} interface
   \item Default queue methods can be used to aggregate policies
-  \item array literals can be used where a \code{policy_queue} is expected
-  \item define, initialize, aggregate, and pass policies all in a single line of code!
+  \item Array literals can be used where a \code{policy_queue} is expected
+  \item Define, initialize, aggregate, and pass policies all in a single line of code!
 \end{itemize}
 \end{frame}
 
@@ -671,12 +685,15 @@ class cfg_object extends policy_object #(uvm_object);
 
 \begin{frame}{Conclusion}
   \begin{itemize}
+    % \setlength\itemsep{0.8em} 
+    % \setlength{\skip\footins}{2cm}
     \item Improvements to the original policy package provide a robust and efficient implementation of policy-based constraints
     \item The policy package is now capable of managing constraints across an entire class hierarchy
     \item The policy definitions are tightly paired with the class they constrain
     \item Macros reduce the expense of defining common policies while still allowing flexibility for custom policies
-    \item A complete implementation is available in the Appendix of the paper and on GitHub which can be included directly in a project to start using policies immediately
+    \item A complete implementation is available in the Appendix of the paper and on GitHub\footnotemark\,\,which can be included directly in a project to start using policies immediately
   \end{itemize}
+  \footnotetext[1]{\url{https://github.com/DillanCMills/policy_pkg}}
 \end{frame}
 
 % Questions
