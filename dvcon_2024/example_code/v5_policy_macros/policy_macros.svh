@@ -5,10 +5,8 @@
 
 `define m_fixed_policy_class(POLICY, FIELD, TYPE)                             \
     class POLICY``_policy extends base_policy;                                \
-        protected TYPE l_val;                                                 \
-                                                                              \
         constraint c_fixed_value {                                            \
-            (m_item != null) -> (m_item.FIELD == TYPE'(l_val));               \
+            (m_item != null) -> (m_item.FIELD == l_val);                      \
         }                                                                     \
                                                                               \
         function new(TYPE value);                                             \

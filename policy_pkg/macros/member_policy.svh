@@ -5,14 +5,14 @@
 
 // Policy class definition
 `define m_member_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")               \
-    class POLICY``_policy extends base_policy                                 \
+    class POLICY``_policy extends base_policy;                                \
         typedef TYPE            l_field_array_t[];                            \
                                                                               \
         local l_field_array_t   m_values;                                     \
         local bit               l_exclude;                                    \
         local string            m_radix=RADIX;                                \
                                                                               \
-        constrant c_policy_constraint {                                       \
+        constraint c_policy_constraint {                                      \
             (m_item != null) ->                                               \
                 ((l_exclude) ^ (m_item.FIELD inside {m_values}));             \
         }                                                                     \
@@ -41,14 +41,14 @@
                     i == m_values.size()-1 ? "" : ", "};                      \
                                                                               \
             return ({                                                         \
-                `"(FIELD ",                                                   \
+                `"(FIELD `",                                                  \
                 l_exclude ? "outside {" : "inside {",                         \
                 values_str,                                                   \
-                `"})`"                                                        \
+                "})"                                                          \
             });                                                               \
         endfunction: description                                              \
                                                                               \
-        virtual function policy copy();                                       \
+        virtual function POLICY``_policy copy();                              \
             copy = new(m_values, l_exclude, m_radix);                         \
         endfunction: copy                                                     \
                                                                               \

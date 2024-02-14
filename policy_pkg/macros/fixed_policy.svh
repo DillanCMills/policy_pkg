@@ -5,12 +5,14 @@
 
 // Policy class definition
 `define m_fixed_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")                \
-    class POLICY``_policy extends base_policy                                 \
-        local TYPE          l_val;                                            \
-        local string        l_radix=RADIX;                                    \
+    class POLICY``_policy extends base_policy;                                \
+      	typedef TYPE    l_field_t;                                            \
+                                                                              \
+        local TYPE      l_val;                                                \
+        local string    l_radix=RADIX;                                        \
                                                                               \
         constraint c_policy_constraint {                                      \
-            (m_item != null) -> (m_item.FIELD == TYPE'(l_val));               \
+            (m_item != null) -> (m_item.FIELD == l_val);                      \
         }                                                                     \
                                                                               \
         function new(TYPE value, string radix=RADIX);                         \
@@ -24,13 +26,13 @@
                                                                               \
         virtual function string description();                                \
             return ({                                                         \
-                `"(FIELD==",                                                  \
+                `"(FIELD==`",                                                 \
                 $sformatf(l_radix, l_val),                                    \
-                `")`"                                                         \
+                ")"                                                           \
             });                                                               \
         endfunction: description                                              \
                                                                               \
-        virtual function policy copy();                                       \
+        virtual function POLICY``_policy copy();                              \
             copy = new(l_val, l_radix);                                       \
         endfunction: copy                                                     \
                                                                               \

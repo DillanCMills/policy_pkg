@@ -5,16 +5,16 @@
 
 // Policy class definition
 `define m_range_policy_class(POLICY, FIELD, TYPE, RADIX="%0p")                \
-    class POLICY``_policy extends base_policy                                 \
+    class POLICY``_policy extends base_policy;                                \
         local TYPE          l_low;                                            \
         local TYPE          l_high;                                           \
         local bit           l_exclude;                                        \
         local string        l_radix=RADIX;                                    \
                                                                               \
-        constrant c_policy_constraint {                                       \
+        constraint c_policy_constraint {                                      \
             (m_item != null) -> (                                             \
                 (l_exclude) ^                                                 \
-                (m_item.FIELD >= l_low && m_item.FIELD <= l_high)           \
+                (m_item.FIELD >= l_low && m_item.FIELD <= l_high)             \
             );                                                                \
         }                                                                     \
                                                                               \
@@ -35,16 +35,16 @@
                                                                               \
         virtual function string description();                                \
             return ({                                                         \
-                `"(FIELD ",                                                   \
+                `"(FIELD `",                                                  \
                 l_exclude ? "outside [" : "inside [",                         \
                 $sformatf(l_radix, l_low),                                    \
                 ", ",                                                         \
                 $sformatf(l_radix, l_high),                                   \
-                `"])`"                                                        \
+                "])"                                                          \
             });                                                               \
         endfunction: description                                              \
                                                                               \
-        virtual function policy copy();                                       \
+        virtual function POLICY``_policy copy();                              \
             copy = new(l_low, l_high, l_exclude, l_radix);                    \
         endfunction: copy                                                     \
                                                                               \

@@ -4,9 +4,10 @@
 `m_const_policy_constructor(POLICY)
 
 // Policy class definition
+// Note - type casting within the constraint expression requires TYPE to be a 
+// single keyword (e.g. int, addr_t), not a vector expression (e.g. bit [31:0])
 `define m_const_policy_class(POLICY, FIELD, TYPE, CONST)                      \
-    class POLICY``_policy extends base_policy                                 \
-                                                                              \
+    class POLICY``_policy extends base_policy;                                \
         constraint c_policy_constraint {                                      \
             (m_item != null) -> (m_item.FIELD == TYPE'(CONST));               \
         }                                                                     \
@@ -22,7 +23,7 @@
             return (`"(FIELD==CONST)`");                                      \
         endfunction: description                                              \
                                                                               \
-        virtual function policy copy();                                       \
+        virtual function POLICY``_policy copy();                              \
             copy = new();                                                     \
         endfunction: copy                                                     \
     endclass: POLICY``_policy

@@ -36,7 +36,7 @@ virtual class policy_imp #(type ITEM=uvm_object) implements policy;
                 "policy::set_item()",
                 $sformatf(
                     "Cannot apply policy '%0s' of type '%0s' to target object '%0s' of incompatible type '%0s'",
-                    this.name(), ITEM::type_name(), item.get_name(), item.get_type_name()
+                    this.name(), this.type_name(), item.get_name(), item.get_type_name()
                 )
             )
             this.m_item = null;

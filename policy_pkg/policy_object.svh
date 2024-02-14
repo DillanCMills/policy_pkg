@@ -1,6 +1,6 @@
 class policy_object #(type BASE=uvm_object) extends BASE implements policy_container;
 
-    protected policy_queue m_policies;
+    protected rand policy_queue m_policies;
   
     // Queries
     virtual function bit has_policies();
@@ -48,5 +48,10 @@ class policy_object #(type BASE=uvm_object) extends BASE implements policy_conta
         end else
             `uvm_warning("policy", $sformatf("policy %s not compatible with target %s", new_policy.name, this.get_name()))
     endfunction: try_add_policy
+
+    // Constructor
+    function new(string name="policy_object");
+        super.new(name);
+    endfunction: new
 
 endclass: policy_object
